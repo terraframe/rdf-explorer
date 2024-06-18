@@ -1,0 +1,40 @@
+{
+  "name": "rdf-explorer",
+  "version": "1.0.0",
+  "description": "Enables map and graph exploration of rdf datasets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/terraframe/rdf-explorer.git"
+  },
+  "keywords": [
+    "rdf",
+    "graph",
+    "map"
+  ],
+  "author": "TerraFrame",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/terraframe/rdf-explorer/issues"
+  },
+  "homepage": "https://github.com/terraframe/rdf-explorer#readme",
+  "devDependencies": {
+    "browserify": "^17.0.0",
+    "fancy-log": "^2.0.0",
+    "gulp": "^4.0.0",
+    "gulp-sourcemaps": "^3.0.0",
+    "gulp-terser": "^2.1.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "tsify": "^5.0.4",
+    "typescript": "^5.4.5",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0",
+    "watchify": "^4.0.0"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.2"
+  }
+}
