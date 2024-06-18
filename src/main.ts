@@ -1,8 +1,18 @@
-import { sayHello } from "./greet";
+import { enableProdMode } from '@angular/core';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { AppModule } from './app/app.module';
 
-function showHello(divName: string, name: string) {
-  const elt = document.getElementById(divName);
-  elt.innerText = sayHello(name);
+// depending on the env mode, enable prod mode or add debugging modules
+if (process.env.ENV === 'build') {
+  enableProdMode();
 }
 
-showHello("greeting", "Typescript");
+export function main() {
+  return platformBrowserDynamic().bootstrapModule(AppModule);
+}
+
+if (document.readyState === 'complete') {
+  main();
+} else {
+  document.addEventListener('DOMContentLoaded', main);
+}

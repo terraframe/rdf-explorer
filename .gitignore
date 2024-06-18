@@ -1,5 +1,11 @@
-dist/
-node_modules/
+/node_modules/
+/package
+/typings/
+/.angular/
+/dist/
+/node/
 build/
 .project
 .settings/
+
+
