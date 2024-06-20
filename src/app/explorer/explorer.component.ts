@@ -1,17 +1,32 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, TemplateRef, ViewChild } from '@angular/core';
 import { Map, NavigationControl, AttributionControl } from "maplibre-gl";
-import * as mapboxgl from "maplibre-gl";
+import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
+import { Parser, Quad, Store } from 'n3';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
+  providers: [BsModalService],
   templateUrl: './explorer.component.html',
   styleUrl: './explorer.component.scss'
 })
 export class ExplorerComponent implements AfterViewInit {
 
+  @ViewChild('template', { static: true }) template!: TemplateRef<any>;
+
   map?: Map;
+  
+  modalRef?: BsModalRef;
+
+  file?: string;
+
+  importError?: string;
+
+  public loadingQuads: boolean = false;
+
+  tripleStore?: Store;
   
   baseLayers: any[] = [
       {
@@ -24,12 +39,56 @@ export class ExplorerComponent implements AfterViewInit {
       }
   ];
   
-  constructor() {
+  constructor(private modalService: BsModalService) {
     // (mapboxgl as any).accessToken = "pk.eyJ1IjoianVzdGlubGV3aXMiLCJhIjoiY2l0YnlpdWRkMDlkNjJ5bzZuMTR3MHZ3YyJ9.Ad0fQd8onRSYR9QZP6VyUw";
   }
   
   ngAfterViewInit() {
       this.initializeMap();
+      this.openModal(this.template);
+  }
+  
+  openModal(viewUserTemplate: TemplateRef<any>) {
+    this.modalRef = this.modalService.show(viewUserTemplate, {
+        ignoreBackdropClick: true
+      });
+  }
+
+  async onFileChange(e: any) {
+    const file:File = e.target.files[0];
+
+    if (file != null)
+    {
+        this.loadRdf(file);
+    }
+  }
+
+  async loadRdf(file: File) {
+    this.loadingQuads = true;
+
+    let text = await file.text();
+    this.tripleStore = new Store();
+
+    const parser = new Parser();
+    parser.parse(text, (error, quad, prefixes) => {
+        if (error)
+        {
+            console.log(error);
+            this.importError = error.message;
+            this.loadingQuads = false;
+        }
+        else if (quad) {
+            this.tripleStore?.add(quad);
+        }
+        else {
+            console.log("Successfully loaded " + this.tripleStore?.size + " quads into memory.");
+            this.loadingQuads = false;
+            this.modalRef?.hide();
+        }
+    });
+    
+
+    
   }
   
   initializeMap() {

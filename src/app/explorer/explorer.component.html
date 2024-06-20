@@ -1,5 +1,23 @@
 <div>
 
+	<ng-template #template>
+	  <div *ngIf="importError != null" class="error">{{importError}}</div>
+	  <div class="modal-header">
+	    <h4 class="modal-title pull-left">Import RDF File</h4>
+	  </div>
+	  <div class="modal-body">
+	    <input class="form-control" type="file" id="myFile" name="filename" accept=".ttl,.nquad,.rdf,.trig,.xml,.n3,.nq,.nt" (change)="onFileChange($event)">
+	  </div>
+	  <div *ngIf="loadingQuads" id="loadingQuads">
+		<div class="spinner spinner-border" role="status">
+			<span class="visually-hidden">Loading...</span>
+		</div>
+		<div class="dimmer">
+
+		</div>
+	  </div>
+	</ng-template>
+
   <div id="map"></div>
 
 </div>
