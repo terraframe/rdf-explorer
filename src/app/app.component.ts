@@ -1,18 +1,13 @@
 import { Component } from '@angular/core';
-
-import { ApiService } from './shared';
-
+import { RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'my-app', // <my-app></my-app>
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  url = 'https://github.com/preboot/angular2-webpack';
-  title: string;
-
-  constructor(private api: ApiService) {
-    this.title = this.api.title;
-  }
+  title = 'rdf-explorer';
 }
