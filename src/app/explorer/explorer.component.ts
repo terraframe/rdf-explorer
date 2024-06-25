@@ -20,7 +20,7 @@ export class ExplorerComponent implements AfterViewInit {
   
   modalRef?: BsModalRef;
 
-  file?: string;
+  // file?: string;
 
   importError?: string;
 
@@ -53,7 +53,12 @@ export class ExplorerComponent implements AfterViewInit {
         ignoreBackdropClick: true
       });
   }
+  
+  async loadSparql(): void {
+    let url = (document.getElementById("sparqlUrl") as HTMLInputElement).value;
+  }
 
+/*
   async onFileChange(e: any) {
     const file:File = e.target.files[0];
 
@@ -86,10 +91,8 @@ export class ExplorerComponent implements AfterViewInit {
             this.modalRef?.hide();
         }
     });
-    
-
-    
   }
+  */
   
   initializeMap() {
       const layer = this.baseLayers[0];

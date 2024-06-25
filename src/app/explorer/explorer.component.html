@@ -6,7 +6,9 @@
 	    <h4 class="modal-title pull-left">Import RDF File</h4>
 	  </div>
 	  <div class="modal-body">
-	    <input class="form-control" type="file" id="myFile" name="filename" accept=".ttl,.nquad,.rdf,.trig,.xml,.n3,.nq,.nt" (change)="onFileChange($event)">
+	    <!-- <input class="form-control" type="file" id="myFile" name="filename" accept=".ttl,.nquad,.rdf,.trig,.xml,.n3,.nq,.nt" (change)="onFileChange($event)"> -->
+		<input class="form-control" type="url" name="sparqlUrl" id="sparqlUrl" />
+		<button class="btn primary" (click)="loadSparql">Submit</button>
 	  </div>
 	  <div *ngIf="loadingQuads" id="loadingQuads">
 		<div class="spinner spinner-border" role="status">
