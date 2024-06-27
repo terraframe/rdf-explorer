@@ -6,6 +6,10 @@
 
 body { margin: 0; padding: 0; }
 
+.modal-body > * {
+  margin: 5px;
+}
+
 .error {
   color: red;
   margin: 10px;

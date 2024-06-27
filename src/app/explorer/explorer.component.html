@@ -7,8 +7,9 @@
 	  </div>
 	  <div class="modal-body">
 	    <!-- <input class="form-control" type="file" id="myFile" name="filename" accept=".ttl,.nquad,.rdf,.trig,.xml,.n3,.nq,.nt" (change)="onFileChange($event)"> -->
-		<input class="form-control" type="url" name="sparqlUrl" id="sparqlUrl" />
-		<button class="btn primary" (click)="loadSparql">Submit</button>
+		<label for="sparqlUrl">SPARQL URL</label>
+		<input class="form-control" type="url" name="sparqlUrl" id="sparqlUrl" value="http://localhost:3030/ogc/sparql?query=SELECT%20%3Fa%20%3Fb%20FROM%20%3Chttps%3A%2F%2Flocalhost%3A4200%2Flpg%2FConnectedToFlood%2F0%23%3E%20WHERE%20%7B%20%3Fa%20%3Chttp%3A%2F%2Fwww.opengis.net%2Font%2Fgeosparql%23asWKT%3E%20%3Fb%20%7D%20LIMIT%2010" />
+		<button class="btn btn-primary" (click)="loadSparql()">Submit</button>
 	  </div>
 	  <div *ngIf="loadingQuads" id="loadingQuads">
 		<div class="spinner spinner-border" role="status">

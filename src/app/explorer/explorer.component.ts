@@ -1,8 +1,22 @@
 import { Component, AfterViewInit, TemplateRef, ViewChild } from '@angular/core';
-import { Map, NavigationControl, AttributionControl } from "maplibre-gl";
+import { Map, NavigationControl, AttributionControl, LngLatBounds, LngLat } from "maplibre-gl";
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { Parser, Quad, Store } from 'n3';
 import { CommonModule } from '@angular/common';
+import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
+
+export interface SPARQLResultSetBinding {
+    type: string, value: string, datatype?: string
+}
+
+export interface SPARQLResultSet {
+    head: [ { vars: [string] } ];
+    results: {
+        bindings: [ {
+            [key: string] : SPARQLResultSetBinding
+        } ]
+    };
+}
 
 @Component({
   selector: 'app-explorer',
@@ -54,8 +68,129 @@ export class ExplorerComponent implements AfterViewInit {
       });
   }
   
-  async loadSparql(): void {
+  async loadSparql() {
+    this.loadingQuads = true;
+
     let url = (document.getElementById("sparqlUrl") as HTMLInputElement).value;
+
+    const respObj = await fetch(url);
+    const rs: SPARQLResultSet = await respObj.json();
+
+    this.processSPARQLResponse(rs)
+
+    this.loadingQuads = false;
+    this.modalRef?.hide();
+  }
+
+  processSPARQLResponse(rs: SPARQLResultSet) : void {
+    console.log(rs);
+    let geoms: GeoJSONGeometry[] = [];
+    
+    rs.results.bindings.forEach(r => {
+        for (const [key, binding] of Object.entries(r)) {
+            if (binding.type === "literal" && binding.datatype === "http://www.opengis.net/ont/geosparql#wktLiteral")
+            {
+                let geom = this.wktToGeometry(binding.value);
+
+                if (geom != null) {
+                    geoms.push(geom);
+                    this.renderGeoObject(Math.random().toString(16).slice(2), geom);
+                }
+            }
+        }
+    });
+
+    this.zoomToGeoms(geoms);
+  }
+
+  zoomToGeoms(geoms: any[])
+  {
+    if (geoms.length == 0 || geoms[0].type == null) return;
+
+    let geojson = geoms[0];
+
+    const geometryType = geojson.type.toUpperCase();
+
+    if (geometryType === "MULTIPOINT" || geometryType === "POINT") {
+        let coords = geojson.coordinates;
+
+        if (coords) {
+            let bounds = new LngLatBounds();
+            coords.forEach((coord: any) => {
+                bounds.extend(coord);
+            });
+
+            let center = bounds.getCenter();
+            let pt = new LngLat(center.lng, center.lat);
+
+            this.map?.flyTo({
+                center: pt,
+                zoom: 9,
+                essential: true
+            });
+        }
+    } else if (geometryType === "MULTIPOLYGON" || geometryType === "POLYGON" || geometryType === "MIXED") {
+        let coords = geojson.coordinates;
+
+        if (coords) {
+            let bounds = new LngLatBounds();
+            coords.forEach((polys: any) => {
+                polys.forEach((subpoly: any) => {
+                    subpoly.forEach((coord: any) => {
+                        bounds.extend(coord);
+                    });
+                });
+            });
+
+            this.map?.fitBounds(bounds, {
+                padding: 20
+            });
+        }
+    } else if (geometryType === "LINE" || geometryType === "MULTILINE") {
+        let coords = geojson.coordinates;
+
+        if (coords) {
+            let bounds = new LngLatBounds();
+            coords.forEach((lines: any) => {
+                lines.forEach((subline: any) => {
+                    subline.forEach((coord: any) => {
+                        bounds.extend(coord);
+                    });
+                });
+            });
+
+            this.map?.fitBounds(bounds, {
+                padding: 20
+            });
+        }
+    }
+  }
+
+  wktToGeometry(wkt: string): GeoJSONGeometryOrNull
+  {
+    if (wkt.indexOf("<") != -1 && wkt.indexOf(">") != -1)
+        wkt = wkt.substring(wkt.indexOf(">") + 1).trim();
+
+    let geojson = parse(wkt);
+
+    return geojson;
+  }
+
+  renderGeoObject(id: string, geojson: any) { // GeoJSONGeometryOrNull
+    this.map?.addSource(id, {
+        'type': 'geojson',
+        'data': geojson
+    });
+    this.map?.addLayer({
+        'id': id,
+        'type': 'fill',
+        'source': id,
+        'layout': {},
+        'paint': {
+            'fill-color': '#088',
+            'fill-opacity': 0.8
+        }
+    });
   }
 
 /*
