@@ -4,6 +4,7 @@ import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { Parser, Quad, Store } from 'n3';
 import { CommonModule } from '@angular/common';
 import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
+import { FormsModule } from '@angular/forms';
 
 export interface SPARQLResultSetBinding {
     type: string, value: string, datatype?: string
@@ -21,7 +22,7 @@ export interface SPARQLResultSet {
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   providers: [BsModalService],
   templateUrl: './explorer.component.html',
   styleUrl: './explorer.component.scss'
@@ -41,7 +42,11 @@ export class ExplorerComponent implements AfterViewInit {
   public loadingQuads: boolean = false;
 
   tripleStore?: Store;
+
+  public sparqlUrl: string = "http://localhost:3030/ogc/sparql";
   
+  public sparqlQuery?: string = "PREFIX geo: <http://www.opengis.net/ont/geosparql#>\nPREFIX lpg: <https://localhost:4200/lpg/ConnectedToFlood/0#>\n\nSELECT ?a ?b \nFROM lpg: \nWHERE {\n   ?a geo:asWKT ?b \n} \nLIMIT 10";
+
   baseLayers: any[] = [
       {
           name: "Satellite",
@@ -71,14 +76,21 @@ export class ExplorerComponent implements AfterViewInit {
   async loadSparql() {
     this.loadingQuads = true;
 
-    let url = (document.getElementById("sparqlUrl") as HTMLInputElement).value;
+    let url = this.sparqlUrl + "?query=" + encodeURIComponent(this.sparqlQuery!);
 
     const respObj = await fetch(url);
+    this.loadingQuads = false;
+
+    if (!respObj.ok || respObj.status >= 400) {
+        let text = await respObj.text();
+        this.importError = text;
+        return;
+    }
+
     const rs: SPARQLResultSet = await respObj.json();
 
     this.processSPARQLResponse(rs)
 
-    this.loadingQuads = false;
     this.modalRef?.hide();
   }
 
