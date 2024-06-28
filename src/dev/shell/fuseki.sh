@@ -27,4 +27,4 @@ set -e
 # Kill any running containers by name of what we're about to run
 docker rm -f $(docker ps -a -q --filter="name=fuseki") > /dev/null || true
 
-sudo docker run -d -p 3030:3030 --name fuseki -e JAVA_OPTS="-Xms512m -Xmx4000m" ghcr.io/zazuko/fuseki-geosparql
+sudo docker run -d -p 3030:3030 --name fuseki -e JAVA_OPTS="-Xms512m -Xmx8000m" ghcr.io/zazuko/fuseki-geosparql

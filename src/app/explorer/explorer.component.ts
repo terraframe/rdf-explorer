@@ -19,6 +19,12 @@ export interface SPARQLResultSet {
     };
 }
 
+export interface GeoObject {
+    type: string,
+    geometry: GeoJSONGeometry,
+    properties: { id: string, label: string }
+}
+
 @Component({
   selector: 'app-explorer',
   standalone: true,
@@ -45,7 +51,20 @@ export class ExplorerComponent implements AfterViewInit {
 
   public sparqlUrl: string = "http://localhost:3030/ogc/sparql";
   
-  public sparqlQuery?: string = "PREFIX geo: <http://www.opengis.net/ont/geosparql#>\nPREFIX lpg: <https://localhost:4200/lpg/ConnectedToFlood/0#>\n\nSELECT ?a ?b \nFROM lpg: \nWHERE {\n   ?a geo:asWKT ?b \n} \nLIMIT 10";
+  public sparqlQuery?: string = `PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX lpgv: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#>
+PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
+
+SELECT ?feature ?wkt ?label ?connectedTo
+FROM lpgv: 
+WHERE {
+  ?feature geo:hasGeometry ?geom .
+  ?geom geo:asWKT ?wkt .
+  ?feature rdfs:label ?label .
+  ?feature lpgvs:ConnectedTo ?connectedTo
+} 
+LIMIT 10`;
 
   baseLayers: any[] = [
       {
@@ -96,30 +115,86 @@ export class ExplorerComponent implements AfterViewInit {
 
   processSPARQLResponse(rs: SPARQLResultSet) : void {
     console.log(rs);
-    let geoms: GeoJSONGeometry[] = [];
+    let geoObjects: GeoObject[] = [];
     
     rs.results.bindings.forEach(r => {
-        for (const [key, binding] of Object.entries(r)) {
-            if (binding.type === "literal" && binding.datatype === "http://www.opengis.net/ont/geosparql#wktLiteral")
-            {
-                let geom = this.wktToGeometry(binding.value);
+        // for (const [key, binding] of Object.entries(r)) {
+        //     if (binding.type === "literal" && binding.datatype === "http://www.opengis.net/ont/geosparql#wktLiteral")
+        //     {
+        //         let geom = this.wktToGeometry(binding.value);
 
-                if (geom != null) {
-                    geoms.push(geom);
-                    this.renderGeoObject(Math.random().toString(16).slice(2), geom);
-                }
-            }
+        //         if (geom != null) {
+        //         }
+        //     }
+        // }
+
+        let geom = this.wktToGeometry(r["wkt"].value);
+
+        if (geom != null) {
+            let geoObject: GeoObject = {
+                type: "Feature",
+                geometry: geom,
+                properties: { label: r["label"].value, id: Math.random().toString(16).slice(2) }
+            };
+
+            geoObjects.push(geoObject);
+
+            this.renderGeoObject(geoObject);
         }
     });
 
-    this.zoomToGeoms(geoms);
+    this.zoomToGeoms(geoObjects);
   }
 
-  zoomToGeoms(geoms: any[])
+  wktToGeometry(wkt: string): GeoJSONGeometryOrNull
+  {
+    if (wkt.indexOf("<") != -1 && wkt.indexOf(">") != -1)
+        wkt = wkt.substring(wkt.indexOf(">") + 1).trim();
+
+    let geojson = parse(wkt);
+
+    return geojson;
+  }
+
+  renderGeoObject(geoObject: GeoObject) {
+    this.map?.addSource(geoObject.properties.id, {
+        type: "geojson",
+        data: geoObject
+    });
+    this.map?.addLayer({
+        'id': geoObject.properties.id,
+        'type': 'fill',
+        'source': geoObject.properties.id,
+        'paint': {
+            'fill-color': '#088',
+            'fill-opacity': 0.8
+        }
+    });
+    // Label layer
+    this.map?.addLayer({
+        id: geoObject.properties.id + "-LABEL",
+        source: geoObject.properties.id,
+        type: "symbol",
+        paint: {
+            "text-color": "black",
+            "text-halo-color": "#fff",
+            "text-halo-width": 2
+        },
+        layout: {
+            "text-field": ["get", "label"],
+            "text-font": ["NotoSansRegular"],
+            "text-offset": [0, 0.6],
+            "text-anchor": "top",
+            "text-size": 12
+        }
+    });
+  }
+
+  zoomToGeoms(geoms: GeoObject[])
   {
     if (geoms.length == 0 || geoms[0].type == null) return;
 
-    let geojson = geoms[0];
+    let geojson = geoms[0].geometry as any;
 
     const geometryType = geojson.type.toUpperCase();
 
@@ -178,33 +253,6 @@ export class ExplorerComponent implements AfterViewInit {
     }
   }
 
-  wktToGeometry(wkt: string): GeoJSONGeometryOrNull
-  {
-    if (wkt.indexOf("<") != -1 && wkt.indexOf(">") != -1)
-        wkt = wkt.substring(wkt.indexOf(">") + 1).trim();
-
-    let geojson = parse(wkt);
-
-    return geojson;
-  }
-
-  renderGeoObject(id: string, geojson: any) { // GeoJSONGeometryOrNull
-    this.map?.addSource(id, {
-        'type': 'geojson',
-        'data': geojson
-    });
-    this.map?.addLayer({
-        'id': id,
-        'type': 'fill',
-        'source': id,
-        'layout': {},
-        'paint': {
-            'fill-color': '#088',
-            'fill-opacity': 0.8
-        }
-    });
-  }
-
 /*
   async onFileChange(e: any) {
     const file:File = e.target.files[0];
@@ -261,7 +309,7 @@ export class ExplorerComponent implements AfterViewInit {
                       'tileSize': 512,
                   }
               },
-              glyphs: window.location.protocol + "//" + window.location.host + "/glyphs/{fontstack}/{range}.pbf",
+              glyphs: "http://rdf-explorer.s3-website-us-west-2.amazonaws.com/glyphs/{fontstack}/{range}.pbf",
               layers: [
                   {
                       id: layer.id,
