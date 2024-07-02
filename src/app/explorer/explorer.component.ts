@@ -11,7 +11,7 @@ export interface SPARQLResultSetBinding {
 }
 
 export interface SPARQLResultSet {
-    head: [ { vars: [string] } ];
+    head: { vars: [string] };
     results: {
         bindings: [ {
             [key: string] : SPARQLResultSetBinding
@@ -22,7 +22,7 @@ export interface SPARQLResultSet {
 export interface GeoObject {
     type: string,
     geometry: GeoJSONGeometry,
-    properties: { id: string, label: string }
+    properties: { uri: string, label: string, edges?: any, [key: string]: any }
 }
 
 @Component({
@@ -49,20 +49,39 @@ export class ExplorerComponent implements AfterViewInit {
 
   tripleStore?: Store;
 
+  public static GEO = "http://www.opengis.net/ont/geosparql#";
+
+  public static GEO_FEATURE = ExplorerComponent.GEO + "Feature";
+
+  public static GEO_WKT_LITERAL = ExplorerComponent.GEO + "wktLiteral";
+
   public sparqlUrl: string = "http://localhost:3030/ogc/sparql";
   
-  public sparqlQuery?: string = `PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  public sparqlQuery?: string = `PREFIX lpgs: <https://dev-georegistry.geoprism.net/lpg/rdfs#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 PREFIX lpgv: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#>
 PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
 
-SELECT ?feature ?wkt ?label ?connectedTo
+SELECT
+?ft1 ?f1 ?wkt1 ?lbl1 # Geo-Object 1
+?e1 ?ev1 # A ConnectedTo edge
+?ft2 ?f2 ?wkt2 ?lbl2 # Geo-Object 2
 FROM lpgv: 
 WHERE {
-  ?feature geo:hasGeometry ?geom .
-  ?geom geo:asWKT ?wkt .
-  ?feature rdfs:label ?label .
-  ?feature lpgvs:ConnectedTo ?connectedTo
+  BIND(geo:Feature as ?ft1) .
+  ?f1 geo:hasGeometry ?g1 .
+  ?g1 geo:asWKT ?wkt1 .
+  ?f1 rdfs:label ?lbl1 .
+  ?f1 lpgvs:ConnectedTo ?f2 .
+
+  BIND(lpgvs:ConnectedTo as ?e1) .
+  BIND(?f2 as ?ev1) .
+
+  BIND(geo:Feature as ?ft2) .
+  ?f2 geo:hasGeometry ?g2 .
+  ?g2 geo:asWKT ?wkt2 .
+  ?f2 rdfs:label ?lbl2 .
 } 
 LIMIT 10`;
 
@@ -118,53 +137,69 @@ LIMIT 10`;
     let geoObjects: GeoObject[] = [];
     
     rs.results.bindings.forEach(r => {
-        // for (const [key, binding] of Object.entries(r)) {
-        //     if (binding.type === "literal" && binding.datatype === "http://www.opengis.net/ont/geosparql#wktLiteral")
-        //     {
-        //         let geom = this.wktToGeometry(binding.value);
-
-        //         if (geom != null) {
-        //         }
-        //     }
-        // }
-
-        let geom = this.wktToGeometry(r["wkt"].value);
-
-        if (geom != null) {
-            let geoObject: GeoObject = {
-                type: "Feature",
-                geometry: geom,
-                properties: { label: r["label"].value, id: Math.random().toString(16).slice(2) }
-            };
-
-            geoObjects.push(geoObject);
-
-            this.renderGeoObject(geoObject);
-        }
+        let geoObject: GeoObject | null = null;
+        let readGeoObjectUri: boolean = false;
+        let lastReadUri: string | null = null;
+        rs.head.vars.forEach(v => {
+            if (r[v].type === "uri" && r[v].value === ExplorerComponent.GEO_FEATURE) {
+                geoObject = {
+                    type: "Feature",
+                    geometry: null,
+                    properties: { uri: Math.random().toString(16).slice(2), edges: {} }
+                } as unknown as GeoObject;
+                geoObjects.push(geoObject);
+                lastReadUri = null;
+                readGeoObjectUri = false;
+            } else {
+                if (geoObject == null) {
+                    throw new Error("Attempt to read property without associated geo feature. Does your query start with a geo:feature declaration?");
+                } else if (r[v].type === "uri" && !readGeoObjectUri) {
+                    geoObject.properties.uri = r[v].value;
+                    readGeoObjectUri = true;
+                } else if (r[v].type === "literal" && r[v].datatype === ExplorerComponent.GEO_WKT_LITERAL) {
+                    geoObject.geometry = this.wktToGeometry(r[v].value);
+                } else if (r[v].type === "literal") {
+                    geoObject.properties.label = r[v].value;
+                } else if (r[v].type === "uri" && readGeoObjectUri) {
+                    if (lastReadUri == null) {
+                        lastReadUri = r[v].value;
+                    } else {
+                        geoObject.properties.edges[lastReadUri] = r[v].value;
+                        lastReadUri = null;
+                    }
+                }
+            }
+        });
     });
+
+    geoObjects = geoObjects.filter(g1 => geoObjects.findIndex(g2 => g1 != g2 && g1.properties.uri === g2.properties.uri) == -1);
+
+    geoObjects.forEach(go => {
+        this.renderGeoObject(go);
+    })
 
     this.zoomToGeoms(geoObjects);
   }
 
-  wktToGeometry(wkt: string): GeoJSONGeometryOrNull
+  wktToGeometry(wkt: string): GeoJSONGeometry
   {
     if (wkt.indexOf("<") != -1 && wkt.indexOf(">") != -1)
         wkt = wkt.substring(wkt.indexOf(">") + 1).trim();
 
     let geojson = parse(wkt);
 
-    return geojson;
+    return geojson as GeoJSONGeometry;
   }
 
   renderGeoObject(geoObject: GeoObject) {
-    this.map?.addSource(geoObject.properties.id, {
+    this.map?.addSource(geoObject.properties.uri, {
         type: "geojson",
         data: geoObject
     });
     this.map?.addLayer({
-        'id': geoObject.properties.id,
+        'id': geoObject.properties.uri,
         'type': 'fill',
-        'source': geoObject.properties.id,
+        'source': geoObject.properties.uri,
         'paint': {
             'fill-color': '#088',
             'fill-opacity': 0.8
@@ -172,8 +207,8 @@ LIMIT 10`;
     });
     // Label layer
     this.map?.addLayer({
-        id: geoObject.properties.id + "-LABEL",
-        source: geoObject.properties.id,
+        id: geoObject.properties.uri + "-LABEL",
+        source: geoObject.properties.uri,
         type: "symbol",
         paint: {
             "text-color": "black",
