@@ -5,6 +5,7 @@ import { Parser, Quad, Store } from 'n3';
 import { CommonModule } from '@angular/common';
 import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
 import { FormsModule } from '@angular/forms';
+import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
 
 export interface SPARQLResultSetBinding {
     type: string, value: string, datatype?: string
@@ -28,7 +29,7 @@ export interface GeoObject {
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, GraphExplorerComponent],
   providers: [BsModalService],
   templateUrl: './explorer.component.html',
   styleUrl: './explorer.component.scss'
@@ -36,6 +37,8 @@ export interface GeoObject {
 export class ExplorerComponent implements AfterViewInit {
 
   @ViewChild('template', { static: true }) template!: TemplateRef<any>;
+
+  @ViewChild("graphExplorer") graphExplorer!: GraphExplorerComponent;
 
   map?: Map;
   
@@ -179,6 +182,7 @@ LIMIT 10`;
     })
 
     this.zoomToGeoms(geoObjects);
+    this.graphExplorer.renderGeoObjects(geoObjects);
   }
 
   wktToGeometry(wkt: string): GeoJSONGeometry

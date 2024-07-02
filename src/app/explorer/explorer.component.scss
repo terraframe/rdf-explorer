@@ -4,6 +4,14 @@
   height: calc(100vh - 0px);
 }
 
+#graphExplorerContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  bottom: 0;
+}
+
 body { margin: 0; padding: 0; }
 
 .modal-content {

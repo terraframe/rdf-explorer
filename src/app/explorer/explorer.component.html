@@ -1,5 +1,6 @@
 <div>
 
+	<!-- Opening modal for specifying your query -->
 	<ng-template #template class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div *ngIf="importError != null" class="error">{{importError}}</div>
@@ -7,7 +8,6 @@
 				<h4 class="modal-title pull-left">Explore SPARQL Query</h4>
 			</div>
 			<div class="modal-body">
-				<!-- <input class="form-control" type="file" id="myFile" name="filename" accept=".ttl,.nquad,.rdf,.trig,.xml,.n3,.nq,.nt" (change)="onFileChange($event)"> -->
 				<label for="sparqlUrl">SPARQL URL</label>
 				<input class="form-control" type="url" name="sparqlUrl" id="sparqlUrl" [(ngModel)]="sparqlUrl" />
 
@@ -26,6 +26,9 @@
 	  </div>
 	</ng-template>
 
+  <!-- Map -->
   <div id="map"></div>
+
+  <div id="graphExplorerContainer"><graph-explorer #graphExplorer></graph-explorer></div>
 
 </div>
