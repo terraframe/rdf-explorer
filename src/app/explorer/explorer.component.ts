@@ -23,7 +23,7 @@ export interface SPARQLResultSet {
 export interface GeoObject {
     type: string,
     geometry: GeoJSONGeometry,
-    properties: { uri: string, label: string, edges?: any, [key: string]: any }
+    properties: { uri: string, label: string, edges: { [key: string]: [string] }, [key: string]: any }
 }
 
 @Component({
@@ -140,25 +140,29 @@ LIMIT 10`;
     let geoObjects: GeoObject[] = [];
     
     rs.results.bindings.forEach(r => {
-        let geoObject: GeoObject | null = null;
+        let geoObject: GeoObject | null | undefined = null;
         let readGeoObjectUri: boolean = false;
         let lastReadUri: string | null = null;
         rs.head.vars.forEach(v => {
             if (r[v].type === "uri" && r[v].value === ExplorerComponent.GEO_FEATURE) {
-                geoObject = {
-                    type: "Feature",
-                    geometry: null,
-                    properties: { uri: Math.random().toString(16).slice(2), edges: {} }
-                } as unknown as GeoObject;
-                geoObjects.push(geoObject);
                 lastReadUri = null;
                 readGeoObjectUri = false;
             } else {
-                if (geoObject == null) {
-                    throw new Error("Attempt to read property without associated geo feature. Does your query start with a geo:feature declaration?");
-                } else if (r[v].type === "uri" && !readGeoObjectUri) {
+                if (r[v].type === "uri" && !readGeoObjectUri) {
+                    geoObject = geoObjects.find(go => go.properties.uri === r[v].value);
+                    if (geoObject == null) {
+                        geoObject = {
+                            type: "Feature",
+                            geometry: null,
+                            properties: { uri: Math.random().toString(16).slice(2), edges: {} }
+                        } as unknown as GeoObject;
+                        geoObjects.push(geoObject);
+                    }
+
                     geoObject.properties.uri = r[v].value;
                     readGeoObjectUri = true;
+                } else if (geoObject == null) {
+                    throw new Error("Attempt to read property without associated geo feature. Does your query start with a geo:feature declaration?");
                 } else if (r[v].type === "literal" && r[v].datatype === ExplorerComponent.GEO_WKT_LITERAL) {
                     geoObject.geometry = this.wktToGeometry(r[v].value);
                 } else if (r[v].type === "literal") {
@@ -167,7 +171,11 @@ LIMIT 10`;
                     if (lastReadUri == null) {
                         lastReadUri = r[v].value;
                     } else {
-                        geoObject.properties.edges[lastReadUri] = r[v].value;
+                        if (geoObject.properties.edges[lastReadUri] == null) {
+                            geoObject.properties.edges[lastReadUri] = [] as any;
+                        }
+                        geoObject.properties.edges[lastReadUri].push(r[v].value);
+
                         lastReadUri = null;
                     }
                 }
@@ -175,7 +183,7 @@ LIMIT 10`;
         });
     });
 
-    geoObjects = geoObjects.filter(g1 => geoObjects.findIndex(g2 => g1 != g2 && g1.properties.uri === g2.properties.uri) == -1);
+    //geoObjects = geoObjects.filter(g1 => geoObjects.findIndex(g2 => g1 != g2 && g1.properties.uri === g2.properties.uri) == -1);
 
     geoObjects.forEach(go => {
         this.renderGeoObject(go);

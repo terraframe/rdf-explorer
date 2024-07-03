@@ -47,7 +47,7 @@ export const COLLAPSE_ANIMATION_TIME: number = 500; // in ms
 
 export const DIMENSIONS = {
     NODE: { WIDTH: 30, HEIGHT: 30 },
-    LABEL: { WIDTH: 170, HEIGHT: 60, FONTSIZE: 14 },
+    LABEL: { WIDTH: 100, HEIGHT: 60, FONTSIZE: 14 },
     PADDING: {
         BETWEEN_NODES: 0,
         NODE_LABEL: 5,
@@ -75,9 +75,13 @@ export class GraphExplorerComponent {
   public geoObjects?: GeoObject[];
   public data?: TreeData;
 
-  public relationship: any = { layout: "VERTICAL" }
+  public relationship: any = { layout: "HORIZONTAL" }
+
+  public typeLegend: { [key: string]: { label: string, color: string } } = {};
 
   public renderGeoObjects(geoObjects: GeoObject[]) {
+    console.log(geoObjects);
+
     this.geoObjects = geoObjects;
     let data: any = {
       edges: [],
@@ -85,18 +89,24 @@ export class GraphExplorerComponent {
     }
 
     geoObjects.forEach(go => {
+
       data.nodes.push({
-        label: go.properties.label,
-        id: this.uriToId(go.properties.uri)
+        label: (go.properties.label != null && go.properties.label != "") ? go.properties.label : go.properties.uri.substring(go.properties.uri.lastIndexOf("#")+1),
+        id: this.uriToId(go.properties.uri),
+        relation: Object.entries(go.properties.edges).length == 0 ? "CHILD" : "PARENT"
       });
 
-      // for (const [key, value] of Object.entries(go.properties.edges)) {
-      //   data.edges.push({
-      //     id: Math.random().toString(16).slice(2),
-      //     source: this.uriToId(go.properties.uri),
-      //     target: value as string
-      //   });
-      // }
+      for (const [key, value] of Object.entries(go.properties.edges)) {
+        // if (value === go.properties.uri) { continue; }
+
+        value.forEach(v => {
+          data.edges.push({
+            id: this.uriToId(Math.random().toString(16).slice(2)),
+            source: this.uriToId(go.properties.uri),
+            target: this.uriToId(v)
+          });
+        });
+      }
     });
 
     window.setTimeout(() => {
@@ -110,7 +120,7 @@ export class GraphExplorerComponent {
   }
 
   uriToId(uri: string): string {
-    return uri.replaceAll("#", "-");
+    return "a" + uri.replaceAll("#", "-");
   }
 
   resizeDimensions(): void {
@@ -141,6 +151,10 @@ export class GraphExplorerComponent {
           .join(" ");
 
       return points;
+  }
+
+  public onClickNode(node: any) {
+
   }
 
 }
