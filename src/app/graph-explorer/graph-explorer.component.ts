@@ -103,7 +103,8 @@ export class GraphExplorerComponent {
           data.edges.push({
             id: this.uriToId(Math.random().toString(16).slice(2)),
             source: this.uriToId(go.properties.uri),
-            target: this.uriToId(v)
+            target: this.uriToId(v),
+            label: this.uriToLabel(key)
           });
         });
       }
@@ -117,6 +118,13 @@ export class GraphExplorerComponent {
     }, 0);
 
     this.resizeDimensions();
+  }
+
+  uriToLabel(uri: string): string {
+    let i = uri.lastIndexOf("#");
+    if (i == -1) return uri;
+
+    return uri.substring(i+1);
   }
 
   uriToId(uri: string): string {
