@@ -52,6 +52,8 @@ export class ExplorerComponent implements AfterViewInit {
 
   tripleStore?: Store;
 
+  private geoObjects: GeoObject[] = [];
+
   public static GEO = "http://www.opengis.net/ont/geosparql#";
 
   public static GEO_FEATURE = ExplorerComponent.GEO + "Feature";
@@ -137,7 +139,7 @@ LIMIT 10`;
 
   processSPARQLResponse(rs: SPARQLResultSet) : void {
     console.log(rs);
-    let geoObjects: GeoObject[] = [];
+    this.geoObjects = [];
     
     rs.results.bindings.forEach(r => {
         let geoObject: GeoObject | null | undefined = null;
@@ -149,14 +151,14 @@ LIMIT 10`;
                 readGeoObjectUri = false;
             } else {
                 if (r[v].type === "uri" && !readGeoObjectUri) {
-                    geoObject = geoObjects.find(go => go.properties.uri === r[v].value);
+                    geoObject = this.geoObjects.find(go => go.properties.uri === r[v].value);
                     if (geoObject == null) {
                         geoObject = {
                             type: "Feature",
                             geometry: null,
                             properties: { uri: Math.random().toString(16).slice(2), edges: {} }
                         } as unknown as GeoObject;
-                        geoObjects.push(geoObject);
+                        this.geoObjects.push(geoObject);
                     }
 
                     geoObject.properties.uri = r[v].value;
@@ -185,12 +187,14 @@ LIMIT 10`;
 
     //geoObjects = geoObjects.filter(g1 => geoObjects.findIndex(g2 => g1 != g2 && g1.properties.uri === g2.properties.uri) == -1);
 
-    geoObjects.forEach(go => {
+    this.geoObjects.forEach(go => {
         this.renderGeoObject(go);
     })
 
-    this.zoomToGeoms(geoObjects);
-    this.graphExplorer.renderGeoObjects(geoObjects);
+    if (this.geoObjects.length > 0)
+        this.zoomTo(this.geoObjects[0].properties.uri);
+
+    this.graphExplorer.renderGeoObjects(this, this.geoObjects);
   }
 
   wktToGeometry(wkt: string): GeoJSONGeometry
@@ -237,11 +241,12 @@ LIMIT 10`;
     });
   }
 
-  zoomToGeoms(geoms: GeoObject[])
+  zoomTo(uri: string)
   {
-    if (geoms.length == 0 || geoms[0].type == null) return;
+    let geoObject = this.geoObjects.find(go => go.properties.uri === uri);
+    if (geoObject == null) return;
 
-    let geojson = geoms[0].geometry as any;
+    let geojson = geoObject.geometry as any;
 
     const geometryType = geojson.type.toUpperCase();
 

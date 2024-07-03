@@ -45,7 +45,7 @@
 
             <!-- Node Template -->
             <ng-template #nodeTemplate let-node>
-              <svg:g (click)=" onClickNode(node)" class="node" [style.cursor]="true ? 'default' : 'pointer'" >
+              <svg:g (click)=" onClickNode(node)" class="node" [style.cursor]="false ? 'default' : 'pointer'" >
                 <svg:polygon [attr.points]="getHexagonPoints(node)"
                   [attr.fill]="node.typeUri == null ? node.data.color : this.typeLegend[node.typeCode].color"
                   ></polygon>

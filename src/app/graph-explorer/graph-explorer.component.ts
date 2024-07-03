@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { GeoObject } from '../explorer/explorer.component';
+import { ExplorerComponent, GeoObject } from '../explorer/explorer.component';
 import { CommonModule } from '@angular/common';
 import { Edge, Node, NgxGraphModule } from '@swimlane/ngx-graph';
 
@@ -65,6 +65,8 @@ export const DIMENSIONS = {
 })
 export class GraphExplorerComponent {
 
+  private HASH_TAG_REPLACEMENT = "-!`~`!-";
+
   public DIMENSIONS = DIMENSIONS;
 
   public SELECTED_NODE_COLOR = SELECTED_NODE_COLOR;
@@ -79,8 +81,11 @@ export class GraphExplorerComponent {
 
   public typeLegend: { [key: string]: { label: string, color: string } } = {};
 
-  public renderGeoObjects(geoObjects: GeoObject[]) {
+  public explorer?: ExplorerComponent;
+
+  public renderGeoObjects(explorer: ExplorerComponent, geoObjects: GeoObject[]) {
     console.log(geoObjects);
+    this.explorer = explorer;
 
     this.geoObjects = geoObjects;
     let data: any = {
@@ -128,7 +133,11 @@ export class GraphExplorerComponent {
   }
 
   uriToId(uri: string): string {
-    return "a" + uri.replaceAll("#", "-");
+    return "a" + uri;
+  }
+
+  idToUri(id: string): string {
+    return id.substring(1);
   }
 
   resizeDimensions(): void {
@@ -162,7 +171,7 @@ export class GraphExplorerComponent {
   }
 
   public onClickNode(node: any) {
-
+    this.explorer?.zoomTo(this.idToUri(node.id));
   }
 
 }
