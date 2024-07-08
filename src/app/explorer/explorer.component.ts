@@ -7,6 +7,9 @@ import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
 import { FormsModule } from '@angular/forms';
 import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
 
+// @ts-ignore
+import ColorGen from "color-generator";
+
 export interface SPARQLResultSetBinding {
     type: string, value: string, datatype?: string
 }
@@ -23,7 +26,7 @@ export interface SPARQLResultSet {
 export interface GeoObject {
     type: string,
     geometry: GeoJSONGeometry,
-    properties: { uri: string, label: string, edges: { [key: string]: [string] }, [key: string]: any }
+    properties: { uri: string, type:string, label: string, edges: { [key: string]: [string] }, [key: string]: any }
 }
 
 @Component({
@@ -54,6 +57,8 @@ export class ExplorerComponent implements AfterViewInit {
 
   private geoObjects: GeoObject[] = [];
 
+  public typeLegend: { [key: string]: { label: string, color: string } } = {};
+
   public static GEO = "http://www.opengis.net/ont/geosparql#";
 
   public static GEO_FEATURE = ExplorerComponent.GEO + "Feature";
@@ -69,12 +74,13 @@ PREFIX lpgv: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#>
 PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
 
 SELECT
-?ft1 ?f1 ?wkt1 ?lbl1 # Geo-Object 1
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # Geo-Object 1
 ?e1 ?ev1 # A ConnectedTo edge
-?ft2 ?f2 ?wkt2 ?lbl2 # Geo-Object 2
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Geo-Object 2
 FROM lpgv: 
 WHERE {
-  BIND(geo:Feature as ?ft1) .
+  BIND(geo:Feature as ?gf1) .
+  ?f1 a ?ft1 .
   ?f1 geo:hasGeometry ?g1 .
   ?g1 geo:asWKT ?wkt1 .
   ?f1 rdfs:label ?lbl1 .
@@ -83,7 +89,8 @@ WHERE {
   BIND(lpgvs:ConnectedTo as ?e1) .
   BIND(?f2 as ?ev1) .
 
-  BIND(geo:Feature as ?ft2) .
+  BIND(geo:Feature as ?gf2) .
+  ?f2 a ?ft2 .
   ?f2 geo:hasGeometry ?g2 .
   ?g2 geo:asWKT ?wkt2 .
   ?f2 rdfs:label ?lbl2 .
@@ -145,13 +152,18 @@ LIMIT 10`;
         let geoObject: GeoObject | null | undefined = null;
         let readGeoObjectUri: boolean = false;
         let lastReadUri: string | null = null;
-        rs.head.vars.forEach(v => {
+        // rs.head.vars.forEach(v => {
+        for (let i: number = 0; i < rs.head.vars.length; ++i) {
+            let v = rs.head.vars[i];
+
             if (r[v].type === "uri" && r[v].value === ExplorerComponent.GEO_FEATURE) {
                 lastReadUri = null;
                 readGeoObjectUri = false;
             } else {
-                if (r[v].type === "uri" && !readGeoObjectUri) {
-                    geoObject = this.geoObjects.find(go => go.properties.uri === r[v].value);
+                if (i > 0 && r[v].type === "uri" && r[rs.head.vars[i-1]].value === ExplorerComponent.GEO_FEATURE) {
+                    let uri = r[rs.head.vars[i+1]].value;
+
+                    geoObject = this.geoObjects.find(go => go.properties.uri === uri);
                     if (geoObject == null) {
                         geoObject = {
                             type: "Feature",
@@ -161,8 +173,10 @@ LIMIT 10`;
                         this.geoObjects.push(geoObject);
                     }
 
-                    geoObject.properties.uri = r[v].value;
+                    geoObject.properties.type = r[v].value;
+                    geoObject.properties.uri = uri;
                     readGeoObjectUri = true;
+                    i++;
                 } else if (geoObject == null) {
                     throw new Error("Attempt to read property without associated geo feature. Does your query start with a geo:feature declaration?");
                 } else if (r[v].type === "literal" && r[v].datatype === ExplorerComponent.GEO_WKT_LITERAL) {
@@ -182,10 +196,14 @@ LIMIT 10`;
                     }
                 }
             }
-        });
+        };
     });
 
     //geoObjects = geoObjects.filter(g1 => geoObjects.findIndex(g2 => g1 != g2 && g1.properties.uri === g2.properties.uri) == -1);
+
+    console.log(this.geoObjects);
+
+    this.calculateTypeLegend();
 
     this.geoObjects.forEach(go => {
         this.renderGeoObject(go);
@@ -196,6 +214,24 @@ LIMIT 10`;
 
     this.graphExplorer.renderGeoObjects(this, this.geoObjects);
   }
+
+  calculateTypeLegend() {
+    this.typeLegend = {};
+    let set: Set<string> = new Set();
+
+    this.geoObjects.forEach(g => set.add(g.properties.type));
+
+    set.forEach(uri => this.typeLegend[uri] = { label: ExplorerComponent.uriToLabel(uri), color: ColorGen().hexString() });
+  }
+
+  public static uriToLabel(uri: string): string {
+    let i = uri.lastIndexOf("#");
+    if (i == -1) return uri;
+
+    return uri.substring(i+1);
+  }
+
+  getTypeLegend() { return this.typeLegend; }
 
   wktToGeometry(wkt: string): GeoJSONGeometry
   {
@@ -208,19 +244,30 @@ LIMIT 10`;
   }
 
   renderGeoObject(geoObject: GeoObject) {
+    const layers = this.map?.getStyle().layers;
+    // Find the index of the first symbol layer in the map style
+    let firstSymbolId;
+    for (let i = 0; i < layers!.length; i++) {
+        if (layers![i].type === 'symbol') {
+            firstSymbolId = layers![i].id;
+            break;
+        }
+    }
+
     this.map?.addSource(geoObject.properties.uri, {
         type: "geojson",
         data: geoObject
     });
     this.map?.addLayer({
-        'id': geoObject.properties.uri,
-        'type': 'fill',
-        'source': geoObject.properties.uri,
-        'paint': {
-            'fill-color': '#088',
-            'fill-opacity': 0.8
-        }
-    });
+            'id': geoObject.properties.uri,
+            'type': 'fill',
+            'source': geoObject.properties.uri,
+            'paint': {
+                'fill-color': this.typeLegend[geoObject.properties.type].color,
+                'fill-opacity': 0.8
+            }
+        },
+        firstSymbolId);
     // Label layer
     this.map?.addLayer({
         id: geoObject.properties.uri + "-LABEL",
