@@ -79,7 +79,7 @@ export class GraphExplorerComponent {
 
   public relationship: any = { layout: "HORIZONTAL" }
 
-  public typeLegend: { [key: string]: { label: string, color: string } } = {};
+  
 
   public explorer?: ExplorerComponent;
 
@@ -98,7 +98,8 @@ export class GraphExplorerComponent {
       data.nodes.push({
         label: (go.properties.label != null && go.properties.label != "") ? go.properties.label : go.properties.uri.substring(go.properties.uri.lastIndexOf("#")+1),
         id: this.uriToId(go.properties.uri),
-        relation: Object.entries(go.properties.edges).length == 0 ? "CHILD" : "PARENT"
+        relation: Object.entries(go.properties.edges).length == 0 ? "CHILD" : "PARENT",
+        type: go.properties.type
       });
 
       for (const [key, value] of Object.entries(go.properties.edges)) {
@@ -109,7 +110,7 @@ export class GraphExplorerComponent {
             id: this.uriToId(Math.random().toString(16).slice(2)),
             source: this.uriToId(go.properties.uri),
             target: this.uriToId(v),
-            label: this.uriToLabel(key)
+            label: ExplorerComponent.uriToLabel(key)
           });
         });
       }
@@ -125,11 +126,8 @@ export class GraphExplorerComponent {
     this.resizeDimensions();
   }
 
-  uriToLabel(uri: string): string {
-    let i = uri.lastIndexOf("#");
-    if (i == -1) return uri;
-
-    return uri.substring(i+1);
+  public getTypeLegend() {
+    return this.explorer?.getTypeLegend();
   }
 
   uriToId(uri: string): string {
