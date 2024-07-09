@@ -284,6 +284,8 @@ LIMIT 10`;
         let type = this.orderedTypes[i];
         let geoObjects = gosByType[type];
 
+        if (geoObjects.length == 0) continue;
+
         let geojson: any = {
             type: "FeatureCollection",
             features: []
@@ -301,16 +303,10 @@ LIMIT 10`;
             type: "geojson",
             data: geojson
         });
-        this.map?.addLayer({
-                'id': type,
-                'type': 'fill',
-                'source': type,
-                'paint': {
-                    'fill-color': this.typeLegend[type].color,
-                    'fill-opacity': 0.8
-                }
-            },
+
+        this.map?.addLayer(this.layerConfig(type, geoObjects[0].geometry.type.toUpperCase()),
             firstSymbolId);
+        
         // Label layer
         this.map?.addLayer({
             id: type + "-LABEL",
@@ -331,6 +327,44 @@ LIMIT 10`;
         });
     }
   }
+
+  private layerConfig(type: string, geometryType: string): any {
+    let layerConfig: any = {
+        id: type,
+        source: type
+    };
+
+    if (geometryType === "MULTIPOLYGON" || geometryType === "POLYGON") {
+        layerConfig.paint = {
+            'fill-color': this.typeLegend[type].color,
+            'fill-opacity': 0.8
+        };
+        layerConfig.type = "fill";
+    } else if (geometryType === "POINT" || geometryType === "MULTIPOINT") {
+        layerConfig.paint = {
+            "circle-radius": 10,
+            "circle-color": this.typeLegend[type].color,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#FFFFFF"
+        };
+        layerConfig.type = "circle";
+    } else if (geometryType === "LINE" || geometryType === "MULTILINE") {
+        layerConfig.layout = {
+            "line-join": "round",
+            "line-cap": "round"
+        }
+        layerConfig.paint = {
+            "line-color": this.typeLegend[type].color,
+            "line-width": 3
+        }
+        layerConfig.type = "line";
+    } else {
+        // eslint-disable-next-line no-console
+        console.log("Unexpected geometry type [" + geometryType + "]");
+    }
+
+    return layerConfig;
+}
 
   geoObjectsByType(): {[key: string]: GeoObject[]} {
     let gos: {[key: string]: GeoObject[]} = {};
