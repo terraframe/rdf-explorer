@@ -66,6 +66,7 @@ label {
 
 .legend .legend-item {
   display: table;
+  cursor: pointer;
 }
 
 .legend-item:not(:first-child) {
@@ -83,4 +84,5 @@ label {
   float: left;
   line-height: 25px;
   height: 25px;
+  cursor: pointer;
 }

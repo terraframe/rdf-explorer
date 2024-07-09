@@ -6,9 +6,11 @@ import { CommonModule } from '@angular/common';
 import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
 import { FormsModule } from '@angular/forms';
 import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 
 // @ts-ignore
 import ColorGen from "color-generator";
+import { Layer } from 'mapbox-gl';
 
 export interface SPARQLResultSetBinding {
     type: string, value: string, datatype?: string
@@ -32,7 +34,7 @@ export interface GeoObject {
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule, GraphExplorerComponent],
+  imports: [CommonModule, FormsModule, GraphExplorerComponent, DragDropModule],
   providers: [BsModalService],
   templateUrl: './explorer.component.html',
   styleUrl: './explorer.component.scss'
@@ -134,6 +136,8 @@ LIMIT 10`;
           selected: true
       }
   ];
+
+  orderedTypes: string[] = [];
   
   constructor(private modalService: BsModalService) {
     // (mapboxgl as any).accessToken = "pk.eyJ1IjoianVzdGlubGV3aXMiLCJhIjoiY2l0YnlpdWRkMDlkNjJ5bzZuMTR3MHZ3YyJ9.Ad0fQd8onRSYR9QZP6VyUw";
@@ -172,7 +176,6 @@ LIMIT 10`;
   }
 
   processSPARQLResponse(rs: SPARQLResultSet) : void {
-    console.log(rs);
     this.geoObjects = [];
     
     rs.results.bindings.forEach(r => {
@@ -226,15 +229,11 @@ LIMIT 10`;
         };
     });
 
-    //geoObjects = geoObjects.filter(g1 => geoObjects.findIndex(g2 => g1 != g2 && g1.properties.uri === g2.properties.uri) == -1);
-
-    console.log(this.geoObjects);
+    this.orderedTypes = Object.keys(this.geoObjectsByType());
 
     this.calculateTypeLegend();
 
-    this.geoObjects.forEach(go => {
-        this.renderGeoObject(go);
-    })
+    this.mapGeoObjects();
 
     if (this.geoObjects.length > 0)
         this.zoomTo(this.geoObjects[0].properties.uri);
@@ -244,11 +243,8 @@ LIMIT 10`;
 
   calculateTypeLegend() {
     this.typeLegend = {};
-    let set: Set<string> = new Set();
 
-    this.geoObjects.forEach(g => set.add(g.properties.type));
-
-    set.forEach(uri => this.typeLegend[uri] = { label: ExplorerComponent.uriToLabel(uri), color: ColorGen().hexString() });
+    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: ColorGen().hexString() });
   }
 
   public static uriToLabel(uri: string): string {
@@ -270,9 +266,9 @@ LIMIT 10`;
     return geojson as GeoJSONGeometry;
   }
 
-  renderGeoObject(geoObject: GeoObject) {
-    const layers = this.map?.getStyle().layers;
+  mapGeoObjects() {
     // Find the index of the first symbol layer in the map style
+    const layers = this.map?.getStyle().layers;
     let firstSymbolId;
     for (let i = 0; i < layers!.length; i++) {
         if (layers![i].type === 'symbol') {
@@ -281,38 +277,75 @@ LIMIT 10`;
         }
     }
 
-    this.map?.addSource(geoObject.properties.uri, {
-        type: "geojson",
-        data: geoObject
-    });
-    this.map?.addLayer({
-            'id': geoObject.properties.uri,
-            'type': 'fill',
-            'source': geoObject.properties.uri,
-            'paint': {
-                'fill-color': this.typeLegend[geoObject.properties.type].color,
-                'fill-opacity': 0.8
-            }
-        },
-        firstSymbolId);
-    // Label layer
-    this.map?.addLayer({
-        id: geoObject.properties.uri + "-LABEL",
-        source: geoObject.properties.uri,
-        type: "symbol",
-        paint: {
-            "text-color": "black",
-            "text-halo-color": "#fff",
-            "text-halo-width": 2
-        },
-        layout: {
-            "text-field": ["get", "label"],
-            "text-font": ["NotoSansRegular"],
-            "text-offset": [0, 0.6],
-            "text-anchor": "top",
-            "text-size": 12
+    // The layers are organized by the type, so we have to group geoObjects by type and create a layer for each type
+    let gosByType = this.geoObjectsByType();
+
+    for (let i = this.orderedTypes.length-1; i >= 0; --i) {
+        let type = this.orderedTypes[i];
+        let geoObjects = gosByType[type];
+
+        let geojson: any = {
+            type: "FeatureCollection",
+            features: []
         }
-    });
+
+        for (let i = 0; i < this.geoObjects.length; ++i) {
+            if (this.geoObjects[i].properties.type !== type) continue;
+
+            let geoObject = this.geoObjects[i];
+    
+            geojson.features.push(geoObject);
+        }
+
+        this.map?.addSource(type, {
+            type: "geojson",
+            data: geojson
+        });
+        this.map?.addLayer({
+                'id': type,
+                'type': 'fill',
+                'source': type,
+                'paint': {
+                    'fill-color': this.typeLegend[type].color,
+                    'fill-opacity': 0.8
+                }
+            },
+            firstSymbolId);
+        // Label layer
+        this.map?.addLayer({
+            id: type + "-LABEL",
+            source: type,
+            type: "symbol",
+            paint: {
+                "text-color": "black",
+                "text-halo-color": "#fff",
+                "text-halo-width": 2
+            },
+            layout: {
+                "text-field": ["get", "label"],
+                "text-font": ["NotoSansRegular"],
+                "text-offset": [0, 0.6],
+                "text-anchor": "top",
+                "text-size": 12
+            }
+        });
+    }
+  }
+
+  geoObjectsByType(): {[key: string]: GeoObject[]} {
+    let gos: {[key: string]: GeoObject[]} = {};
+
+    for (let i = 0; i < this.geoObjects.length; ++i) {
+        let geoObject = this.geoObjects[i];
+
+        if (gos[geoObject.properties.type] === undefined) {
+            gos[geoObject.properties.type] = [];
+        }
+
+        gos[geoObject.properties.type].push(geoObject);
+    }
+
+    return gos;
   }
 
   zoomTo(uri: string)
@@ -376,6 +409,15 @@ LIMIT 10`;
                 padding: 20
             });
         }
+    }
+  }
+
+  drop(event: CdkDragDrop<string[]>) {
+    moveItemInArray(this.orderedTypes, event.previousIndex, event.currentIndex);
+
+    for (let i = 0; i < this.orderedTypes.length; ++i) {
+        this.map?.moveLayer(this.orderedTypes[i], i > 0 ? this.orderedTypes[i-1] : undefined);
+        this.map?.moveLayer(this.orderedTypes[i] + "-LABEL", i > 0 ? this.orderedTypes[i-1] + "-LABEL" : undefined);
     }
   }
 

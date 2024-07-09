@@ -84,7 +84,6 @@ export class GraphExplorerComponent {
   public explorer?: ExplorerComponent;
 
   public renderGeoObjects(explorer: ExplorerComponent, geoObjects: GeoObject[]) {
-    console.log(geoObjects);
     this.explorer = explorer;
 
     this.geoObjects = geoObjects;

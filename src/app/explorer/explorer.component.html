@@ -33,11 +33,11 @@
   <div id="graphExplorerContainer"><graph-explorer #graphExplorer></graph-explorer></div>
 
   <!-- Legend -->
-  <div class="legend">
-	<div class="legend-item" *ngFor="let item of typeLegend | keyvalue">
-	  <div class="square" [ngStyle]="{ background: item.value.color }"></div>
+  <div class="legend" cdkDropList (cdkDropListDropped)="drop($event)">
+	<div class="legend-item" *ngFor="let type of orderedTypes" cdkDrag>
+	  <div class="square" [ngStyle]="{ background: typeLegend[type].color }"></div>
 	  
-	  <label>{{ item.value.label }}</label>
+	  <label>{{ typeLegend[type].label }}</label>
 	</div>
   </div>
 
