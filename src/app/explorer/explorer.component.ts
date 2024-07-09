@@ -79,6 +79,8 @@ SELECT
 ?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveeArea
 ?e2 ?ev2 # HasFloodZone
 ?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea
+?e3 ?ev3 # ConnectedTo
+?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # Object of interest
 FROM lpgv: 
 WHERE {
   BIND(geo:Feature as ?gf1) .
@@ -108,7 +110,17 @@ WHERE {
   ?f3 a ?ft3 .
   ?f3 geo:hasGeometry ?g3 .
   ?g3 geo:asWKT ?wkt3 .
-  ?f3 rdfs:label ?lbl3
+  ?f3 rdfs:label ?lbl3 .
+  ?f3 lpgvs:HasFloodRisk ?f4 .
+  
+  BIND(lpgvs:HasFloodRisk as ?e3) .
+  BIND(?f4 as ?ev3) .
+
+  BIND(geo:Feature as ?gf4) .
+  ?f4 a ?ft4 .
+  ?f4 geo:hasGeometry ?g4 .
+  ?g4 geo:asWKT ?wkt4 .
+  ?f4 rdfs:label ?lbl4
 } 
 LIMIT 10`;
 
