@@ -29,6 +29,16 @@
   <!-- Map -->
   <div id="map"></div>
 
+  <!-- Graph -->
   <div id="graphExplorerContainer"><graph-explorer #graphExplorer></graph-explorer></div>
+
+  <!-- Legend -->
+  <div class="legend">
+	<div class="legend-item" *ngFor="let item of typeLegend | keyvalue">
+	  <div class="square" [ngStyle]="{ background: item.value.color }"></div>
+	  
+	  <label>{{ item.value.label }}</label>
+	</div>
+  </div>
 
 </div>

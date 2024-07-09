@@ -55,3 +55,28 @@ textarea {
 label {
   font-weight:bold;
 }
+
+.legend {
+  position: absolute;
+  padding: 10px;
+  top: 0;
+  right:0;
+  background-color: white;
+}
+
+.legend .legend-item {
+  display: table;
+}
+
+.legend .square {
+  width: 25px;
+  height: 25px;
+  margin-right: 5px;
+  float: left;
+}
+
+.legend label {
+  float: left;
+  line-height: 25px;
+  height: 25px;
+}
