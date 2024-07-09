@@ -74,12 +74,15 @@ PREFIX lpgv: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#>
 PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
 
 SELECT
-?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # Geo-Object 1
-?e1 ?ev1 # A ConnectedTo edge
-?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Geo-Object 2
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # Project
+?e1 ?ev1 # ConnectedTo
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveeArea
+?e2 ?ev2 # HasFloodZone
+?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea
 FROM lpgv: 
 WHERE {
   BIND(geo:Feature as ?gf1) .
+  BIND(lpgvs:Project as ?ft1) .
   ?f1 a ?ft1 .
   ?f1 geo:hasGeometry ?g1 .
   ?g1 geo:asWKT ?wkt1 .
@@ -90,10 +93,22 @@ WHERE {
   BIND(?f2 as ?ev1) .
 
   BIND(geo:Feature as ?gf2) .
+  BIND(lpgvs:LeveeArea as ?ft2) .
   ?f2 a ?ft2 .
   ?f2 geo:hasGeometry ?g2 .
   ?g2 geo:asWKT ?wkt2 .
   ?f2 rdfs:label ?lbl2 .
+  ?f2 lpgvs:HasFloodZone ?f3 .
+  
+  BIND(lpgvs:HasFloodZone as ?e2) .
+  BIND(?f3 as ?ev2) .
+
+  BIND(geo:Feature as ?gf3) .
+  BIND(lpgvs:LeveedArea as ?ft3) .
+  ?f3 a ?ft3 .
+  ?f3 geo:hasGeometry ?g3 .
+  ?g3 geo:asWKT ?wkt3 .
+  ?f3 rdfs:label ?lbl3
 } 
 LIMIT 10`;
 

@@ -68,6 +68,10 @@ label {
   display: table;
 }
 
+.legend-item:not(:first-child) {
+  padding-top: 5px;
+}
+
 .legend .square {
   width: 25px;
   height: 25px;
