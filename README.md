@@ -5,4 +5,5 @@ This project helps to visualize and explore geospatially-enabled RDF datasets as
 This project was developed by TerraFrame and funded by the U.S. Army Core of Engineers (USACE) and is made available to the public free of charge and licensed under MIT.
 
 Demo available here:
+
 http://rdf-explorer.s3-website-us-west-2.amazonaws.com/
