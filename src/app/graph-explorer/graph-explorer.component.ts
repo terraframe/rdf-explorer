@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { ExplorerComponent, GeoObject } from '../explorer/explorer.component';
 import { CommonModule } from '@angular/common';
-import { Edge, Node, NgxGraphModule } from '@swimlane/ngx-graph';
+import { Edge, Node, GraphComponent, GraphModule } from '@swimlane/ngx-graph';
 
 // export interface Relationship {
 //   oid: string,
@@ -58,12 +58,14 @@ export const DIMENSIONS = {
 @Component({
   selector: 'graph-explorer',
   standalone: true,
-  imports: [CommonModule, NgxGraphModule],
+  imports: [CommonModule, GraphModule],
   providers: [],
   templateUrl: './graph-explorer.component.html',
   styleUrl: './graph-explorer.component.scss'
 })
 export class GraphExplorerComponent {
+
+  @ViewChild("graph") graph!: GraphComponent;
 
   private HASH_TAG_REPLACEMENT = "-!`~`!-";
 
@@ -169,6 +171,30 @@ export class GraphExplorerComponent {
 
   public onClickNode(node: any) {
     this.explorer?.zoomTo(this.idToUri(node.id));
+  }
+
+  public zoomToUri(uri: string) {
+    // this.graph.zoomLevel = 10;
+    // this.graph.zoomToFit();
+
+    // this.graph.zoom(this.graph.zoomLevel - 1);
+    // if (this.graph.zoomLevel)
+    // console.log(this.graph.zoomLevel);
+
+    // console.log(this.graph.zoomLevel);
+    // this.graph.zoom(2);
+    // console.log(this.graph.zoomLevel);
+
+    const desiredZoomLevel = 1.1;
+
+    this.graph.zoom(desiredZoomLevel / this.graph.zoomLevel);
+
+    this.graph.panToNodeId(this.uriToId(uri));
+
+    // window.setTimeout(() => {
+    //   this.graph.zoom(4);
+    //   this.graph.panToNodeId(this.uriToId(uri));
+    // }, 10);
   }
 
 }

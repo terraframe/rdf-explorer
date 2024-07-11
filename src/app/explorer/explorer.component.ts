@@ -67,7 +67,7 @@ export class ExplorerComponent implements AfterViewInit {
 
   public static GEO_WKT_LITERAL = ExplorerComponent.GEO + "wktLiteral";
 
-  public sparqlUrl: string = "http://localhost:3030/ogc/sparql";
+  public sparqlUrl: string = "http://staging-georegistry.geoprism.net:3030/usace/sparql";
   
   public sparqlQuery?: string = `PREFIX lpgs: <https://dev-georegistry.geoprism.net/lpg/rdfs#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -124,7 +124,7 @@ WHERE {
   ?g4 geo:asWKT ?wkt4 .
   ?f4 rdfs:label ?lbl4
 } 
-LIMIT 10`;
+LIMIT 30`;
 
   baseLayers: any[] = [
       {
@@ -537,8 +537,24 @@ LIMIT 10`;
   
   initMap(): void {
       // Add zoom and rotation controls to the map.
-      this.map?.addControl(new AttributionControl({ compact: true }), "bottom-right");
-      this.map?.addControl(new NavigationControl({ visualizePitch: true }), "bottom-right");
+      this.map!.addControl(new AttributionControl({ compact: true }), "bottom-right");
+      this.map!.addControl(new NavigationControl({ visualizePitch: true }), "bottom-right");
+
+      this.map!.on('click', (e) => {
+        this.handleMapClickEvent(e);
+    });
   }
+
+    handleMapClickEvent(e: any): void {
+        const features = this.map!.queryRenderedFeatures(e.point);
+
+        if (features != null && features.length > 0) {
+            const feature = features[0];
+
+            if (feature.properties['uri'] != null) {
+                this.graphExplorer.zoomToUri(feature.properties['uri']);
+            }
+        }
+    }
   
 }

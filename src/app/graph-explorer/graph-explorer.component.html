@@ -23,7 +23,7 @@
       <div class="hierarchy-content">
         <div id="graph-container">
 
-          <ngx-graph class="chart-container" [links]="data!.edges"
+          <ngx-graph #graph class="chart-container" [links]="data!.edges"
             [nodes]="data!.nodes" [animate]="false" [autoZoom]="true" [autoCenter]="true" [draggingEnabled]="false"
           >
             <!--
