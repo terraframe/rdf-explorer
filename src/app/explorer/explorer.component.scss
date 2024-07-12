@@ -48,8 +48,15 @@ input {
 
 textarea {
   width: 100% !important;
-  height: 300px;
   width: 500px;
+}
+
+#sparqlText {
+  height: 300px;
+}
+
+#stylesText {
+  height: 100px;
 }
 
 label {

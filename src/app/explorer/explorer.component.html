@@ -12,7 +12,11 @@
 				<input class="form-control" type="url" name="sparqlUrl" id="sparqlUrl" [(ngModel)]="sparqlUrl" />
 
 				<label for="sparqlQuery">SPARQL Query</label>
-				<textarea [(ngModel)]="sparqlQuery"></textarea>
+				<textarea id="sparqlText" [(ngModel)]="sparqlQuery"></textarea>
+
+				<label for="sparqlQuery">Styles</label>
+				<textarea id="stylesText" [(ngModel)]="stylesText" (ngModelChange)="parseStylesText()"></textarea>
+
 				<button class="btn btn-primary" (click)="loadSparql()">Submit</button>
 			</div>
 			<div *ngIf="loadingQuads" id="loadingQuads">

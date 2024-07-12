@@ -7,6 +7,7 @@ import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
 import { FormsModule } from '@angular/forms';
 import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import JSON5 from 'json5'
 
 // @ts-ignore
 import ColorGen from "color-generator";
@@ -126,6 +127,29 @@ WHERE {
 } 
 LIMIT 30`;
 
+  public stylesText: string = `{
+  'lpgvs:Hospital':'#F2799D',
+  'lpgvs:Dam':'#D5F279',
+  'lpgvs:Project':'#C0F279',
+  'lpgvs:Watershed':'#79F2C9',
+  'lpgvs:LeveeArea':'#79C7F2', 
+  'lpgvs:RealProperty':'#79F294',
+  'lpgvs:Reservoir':'#94F279',
+  'lpgvs:ChannelArea':'#F279B7',
+  'lpgvs:ChannelReach':'#79DAF2',
+  'lpgvs:RecreationArea':'#F2E779',
+  'lpgvs:School':'#F2A579',
+  'lpgvs:ChannelLine':'#79F2A0',
+  'lpgvs:LeveedArea':'#C379F2',
+  'lpgvs:River':'#7999F2',
+  'lpgvs:SchoolZone':'#BCF279',
+  'lpgvs:Levee':'#F279E0',
+  'lpgvs:WaterLock':'#79F2E2',
+  'lpgvs:UsaceRecreationArea':'#F2BE79'
+}`;
+
+  public styles: { [key: string]: string } = {};
+
   baseLayers: any[] = [
       {
           name: "Satellite",
@@ -144,8 +168,13 @@ LIMIT 30`;
   }
   
   ngAfterViewInit() {
+      this.parseStylesText();
       this.initializeMap();
       this.openModal(this.template);
+      
+      for (let i = 0; i < 20; ++i) {
+        console.log(ColorGen().hexString());
+      }
   }
   
   openModal(viewUserTemplate: TemplateRef<any>) {
@@ -244,7 +273,7 @@ LIMIT 30`;
   calculateTypeLegend() {
     this.typeLegend = {};
 
-    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: ColorGen().hexString() });
+    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: (this.styles[type] != null ? this.styles[type] : ColorGen().hexString()) });
   }
 
   public static uriToLabel(uri: string): string {
@@ -380,6 +409,55 @@ LIMIT 30`;
     }
 
     return gos;
+  }
+
+  parsePrefixesFromSparql(): {[key: string]: string} {
+    let out: any = {};
+
+    let matches = this.sparqlQuery?.matchAll(/PREFIX (.*:) <(.*)>/g);
+    let result = matches!.next();
+    while (!result.done) {
+        out[result.value[1]] = result.value[2];
+        result = matches!.next();
+    }
+
+    return out;
+  }
+
+  parseStylesText() {
+    try {
+        this.styles = JSON5.parse(this.stylesText);
+
+        let prefixes = this.parsePrefixesFromSparql();
+
+        let newStyles: any = {};
+        for (const [key, value] of Object.entries(this.styles)) {
+            for (const [prefix, uri] of Object.entries(prefixes)) {
+                if (key.startsWith(prefix)) {
+                    newStyles[key.replace(prefix, uri)] = value;
+                    break;
+                }
+            }
+        }
+        this.styles = newStyles;
+
+        // let changed = false;
+
+        // for (let i = 0; i < this.styles.length; ++i) {
+        //     let style = this.styles[i];
+
+        //     if (style.color == null || style.color == "") {
+        //         style.color = ColorGen().hexString();
+        //         changed = true;
+        //     }
+        // }
+
+        // if (changed) {
+        //     this.stylesText = JSON5.stringify(this.styles);
+        // }
+    } catch (ex: any) {
+        this.importError = ex.message;
+    }
   }
 
   zoomTo(uri: string)
