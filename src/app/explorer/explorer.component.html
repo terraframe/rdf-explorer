@@ -11,6 +11,11 @@
 				<label for="sparqlUrl">SPARQL URL</label>
 				<input class="form-control" type="url" name="sparqlUrl" id="sparqlUrl" [(ngModel)]="sparqlUrl" />
 
+				<label for="dropdown">Built-in Queries</label>
+				<select class="form-select" aria-label="Select a query" [(ngModel)]="queryConfig" (ngModelChange)="onSelectQuery()">
+					<option [ngValue]="q" *ngFor="let q of defaultQueries">{{q.title}}</option>
+				</select>
+
 				<label for="sparqlQuery">SPARQL Query</label>
 				<textarea id="sparqlText" [(ngModel)]="queryConfig.sparql"></textarea>
 

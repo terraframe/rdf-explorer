@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { defaultQueries, StyleConfig, QueryConfig } from './config';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import JSON5 from 'json5'
 
 // @ts-ignore
@@ -36,7 +37,7 @@ export interface GeoObject {
 @Component({
   selector: 'app-explorer',
   standalone: true,
-  imports: [CommonModule, FormsModule, GraphExplorerComponent, DragDropModule],
+  imports: [CommonModule, FormsModule, GraphExplorerComponent, DragDropModule, BsDropdownModule],
   providers: [BsModalService],
   templateUrl: './explorer.component.html',
   styleUrl: './explorer.component.scss'
@@ -54,6 +55,8 @@ export class ExplorerComponent implements AfterViewInit {
   // file?: string;
 
   importError?: string;
+
+  public defaultQueries = defaultQueries;
 
   public loadingQuads: boolean = false;
 
@@ -74,6 +77,8 @@ export class ExplorerComponent implements AfterViewInit {
   public queryConfig: QueryConfig = defaultQueries[0];
 
   public stylesText: string = "";
+
+  resolvedStyles!: StyleConfig;
 
   baseLayers: any[] = [
       {
@@ -99,9 +104,9 @@ export class ExplorerComponent implements AfterViewInit {
       this.initializeMap();
       this.openModal(this.template);
       
-      for (let i = 0; i < 20; ++i) {
-        console.log(ColorGen().hexString());
-      }
+    //   for (let i = 0; i < 20; ++i) {
+    //     console.log(ColorGen().hexString());
+    //   }
   }
   
   openModal(viewUserTemplate: TemplateRef<any>) {
@@ -187,7 +192,7 @@ export class ExplorerComponent implements AfterViewInit {
 
     this.orderedTypes = Object.keys(this.geoObjectsByType());
     this.orderedTypes = this.orderedTypes.sort((a,b) => {
-        return (this.queryConfig.styles[a]?.order ?? 999) - (this.queryConfig.styles[b]?.order ?? 999);
+        return (this.resolvedStyles[a]?.order ?? 999) - (this.resolvedStyles[b]?.order ?? 999);
     });
 
     this.calculateTypeLegend();
@@ -200,10 +205,14 @@ export class ExplorerComponent implements AfterViewInit {
     this.graphExplorer.renderGeoObjects(this, this.geoObjects);
   }
 
+  onSelectQuery() {
+    this.stylesText = JSON.stringify(this.queryConfig.styles, null, 2);
+  }
+
   calculateTypeLegend() {
     this.typeLegend = {};
 
-    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: (this.queryConfig.styles[type] != null ? this.queryConfig.styles[type].color : ColorGen().hexString()) });
+    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: (this.resolvedStyles[type] != null ? this.resolvedStyles[type].color : ColorGen().hexString()) });
   }
 
   public static uriToLabel(uri: string): string {
@@ -369,7 +378,7 @@ export class ExplorerComponent implements AfterViewInit {
                 }
             }
         }
-        this.queryConfig.styles = newStyles;
+        this.resolvedStyles = newStyles;
 
         // let changed = false;
 
