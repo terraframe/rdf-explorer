@@ -12,7 +12,7 @@
 				<input class="form-control" type="url" name="sparqlUrl" id="sparqlUrl" [(ngModel)]="sparqlUrl" />
 
 				<label for="sparqlQuery">SPARQL Query</label>
-				<textarea id="sparqlText" [(ngModel)]="sparqlQuery"></textarea>
+				<textarea id="sparqlText" [(ngModel)]="queryConfig.sparql"></textarea>
 
 				<label for="sparqlQuery">Styles</label>
 				<textarea id="stylesText" [(ngModel)]="stylesText" (ngModelChange)="parseStylesText()"></textarea>
