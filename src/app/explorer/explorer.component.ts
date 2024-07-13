@@ -128,27 +128,27 @@ WHERE {
 LIMIT 30`;
 
   public stylesText: string = `{
-  'lpgvs:Hospital':'#F2799D',
-  'lpgvs:Dam':'#D5F279',
-  'lpgvs:Project':'#C0F279',
-  'lpgvs:Watershed':'#79F2C9',
-  'lpgvs:LeveeArea':'#79C7F2', 
-  'lpgvs:RealProperty':'#79F294',
-  'lpgvs:Reservoir':'#94F279',
-  'lpgvs:ChannelArea':'#F279B7',
-  'lpgvs:ChannelReach':'#79DAF2',
-  'lpgvs:RecreationArea':'#F2E779',
-  'lpgvs:School':'#F2A579',
-  'lpgvs:ChannelLine':'#79F2A0',
-  'lpgvs:LeveedArea':'#C379F2',
-  'lpgvs:River':'#7999F2',
-  'lpgvs:SchoolZone':'#BCF279',
-  'lpgvs:Levee':'#F279E0',
-  'lpgvs:WaterLock':'#79F2E2',
-  'lpgvs:UsaceRecreationArea':'#F2BE79'
+  'lpgvs:Hospital': {color:'#F2799D', order:0},
+  'lpgvs:Dam':{color:'#D5F279', order:0},
+  'lpgvs:Project':{color:'#C0F279', order:6},
+  'lpgvs:Watershed':{color:'#79F2C9', order:4},
+  'lpgvs:LeveeArea':{color:'#79C7F2', order:4}, 
+  'lpgvs:RealProperty':{color:'#79F294', order:0},
+  'lpgvs:Reservoir':{color:'#94F279', order:0},
+  'lpgvs:ChannelArea':{color:'#F279B7',order:4},
+  'lpgvs:ChannelReach':{color:'#79DAF2',order:4},
+  'lpgvs:RecreationArea':{color:'#F2E779',order:3},
+  'lpgvs:School':{color:'#F2A579',order:0},
+  'lpgvs:ChannelLine':{color:'#79F2A0',order:1},
+  'lpgvs:LeveedArea':{color:'#C379F2',order:4},
+  'lpgvs:River':{color:'#7999F2',order:2},
+  'lpgvs:SchoolZone':{color:'#BCF279',order:1},
+  'lpgvs:Levee':{color:'#F279E0',order:0},
+  'lpgvs:WaterLock':{color:'#79F2E2',order:0},
+  'lpgvs:UsaceRecreationArea':{color:'#F2BE79',order:3}
 }`;
 
-  public styles: { [key: string]: string } = {};
+  public styles: { [key: string]: {color:string, order:number} } = {};
 
   baseLayers: any[] = [
       {
@@ -259,6 +259,9 @@ LIMIT 30`;
     });
 
     this.orderedTypes = Object.keys(this.geoObjectsByType());
+    this.orderedTypes = this.orderedTypes.sort((a,b) => {
+        return (this.styles[a]?.order ?? 999) - (this.styles[b]?.order ?? 999);
+    });
 
     this.calculateTypeLegend();
 
@@ -273,7 +276,7 @@ LIMIT 30`;
   calculateTypeLegend() {
     this.typeLegend = {};
 
-    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: (this.styles[type] != null ? this.styles[type] : ColorGen().hexString()) });
+    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: (this.styles[type] != null ? this.styles[type].color : ColorGen().hexString()) });
   }
 
   public static uriToLabel(uri: string): string {
