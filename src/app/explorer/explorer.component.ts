@@ -7,7 +7,7 @@ import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
 import { FormsModule } from '@angular/forms';
 import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { defaultQueries, StyleConfig, QueryConfig } from './config';
+import { defaultQueries, StyleConfig, QueryConfig } from './defaultQueries';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import JSON5 from 'json5'
 
