@@ -317,7 +317,7 @@ export class ExplorerComponent implements AfterViewInit {
             "circle-stroke-color": "#FFFFFF"
         };
         layerConfig.type = "circle";
-    } else if (geometryType === "LINE" || geometryType === "MULTILINE") {
+    } else if (geometryType === "LINE" || geometryType === "MULTILINE" || geometryType === "MULTILINESTRING") {
         layerConfig.layout = {
             "line-join": "round",
             "line-cap": "round"

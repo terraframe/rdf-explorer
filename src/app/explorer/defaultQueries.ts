@@ -7,7 +7,8 @@ let prefixes:string = `PREFIX lpgs: <https://dev-georegistry.geoprism.net/lpg/rd
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 PREFIX lpgv: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#>
-PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>`
+PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
+`
 
 let defaultStyles = {
     'lpgvs:Hospital': {color:'#F2799D', order:0},
@@ -34,7 +35,6 @@ export const defaultQueries: QueryConfig[] = [
     {
         title: "Projects FloodRisk Structures",
         sparql: prefixes + `
-
 SELECT
 ?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # Project
 ?e1 ?ev1 # ConnectedTo
@@ -89,14 +89,7 @@ LIMIT 30`,
     },
     {
         title: "ChannelReach ConnectedTo ProjectArea PartOf Program",
-        sparql: prefixes + `
-
-PREFIX lpgs: <https://dev-georegistry.geoprism.net/lpg/rdfs#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX geo: <http://www.opengis.net/ont/geosparql#>
-PREFIX lpgv: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#>
-PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
-PREFIX lds: <http://dime.usace.mil/data/dataset#TERRAFRAME_CHANNEL_TO_PROJECT>
+        sparql: prefixes + `PREFIX lds: <http://dime.usace.mil/data/dataset#TERRAFRAME_CHANNEL_TO_PROJECT>
 PREFIX ldsremis: <http://dime.usace.mil/data/dataset#REMIS_PROJECTS>
 
 SELECT
@@ -142,5 +135,36 @@ WHERE {
 } 
 LIMIT 30`,
         styles: defaultStyles
+    },
+    {
+      title: "Hydrology",
+      sparql: prefixes + `
+SELECT
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # River
+?e1 ?ev1 # FlowsInto
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Object
+FROM lpgv: 
+WHERE {
+  BIND(geo:Feature as ?gf1) .
+  BIND(lpgvs:River as ?ft1) .
+  ?f1 a ?ft1 .
+  ?f1 geo:hasGeometry ?g1 .
+  ?g1 geo:asWKT ?wkt1 .
+  ?f1 rdfs:label ?lbl1 .
+  ?f1 lpgvs:FlowsInto ?f2 .
+  ?f1 lpgvs:FlowsThrough ?f3 .
+
+  BIND(lpgvs:FlowsInto as ?e1) .
+  BIND(?f2 as ?ev1) .
+
+  BIND(geo:Feature as ?gf2) .
+  ?f2 a ?ft2 .
+  ?f2 geo:hasGeometry ?g2 .
+  ?g2 geo:asWKT ?wkt2 .
+  ?f2 rdfs:label ?lbl2
+} 
+LIMIT 30
+`,
+      styles: defaultStyles
     }
 ];
