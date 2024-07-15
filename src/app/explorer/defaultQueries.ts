@@ -88,21 +88,29 @@ LIMIT 30`,
         styles: defaultStyles
     },
     {
-        title: "Some query 123",
+        title: "ChannelReach ConnectedTo ProjectArea PartOf Program",
         sparql: prefixes + `
 
+PREFIX lpgs: <https://dev-georegistry.geoprism.net/lpg/rdfs#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX lpgv: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#>
+PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
+PREFIX lds: <http://dime.usace.mil/data/dataset#TERRAFRAME_CHANNEL_TO_PROJECT>
+PREFIX ldsremis: <http://dime.usace.mil/data/dataset#REMIS_PROJECTS>
+
 SELECT
-?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # Project
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # ChannelReach
 ?e1 ?ev1 # ConnectedTo
-?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveeArea
-?e2 ?ev2 # HasFloodZone
-?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea
-?e3 ?ev3 # ConnectedTo
-?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # Object of interest
-FROM lpgv: 
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Project (GPR)
+?e2 ?ev2 # IsPartOf (ImageMatters)
+?gf3 ?ft3 ?f3 ?lbl3 # Program
+FROM lpgv:
+FROM lds:
+FROM ldsremis:
 WHERE {
   BIND(geo:Feature as ?gf1) .
-  BIND(lpgvs:Project as ?ft1) .
+  BIND(lpgvs:ChannelReach as ?ft1) .
   ?f1 a ?ft1 .
   ?f1 geo:hasGeometry ?g1 .
   ?g1 geo:asWKT ?wkt1 .
@@ -113,32 +121,24 @@ WHERE {
   BIND(?f2 as ?ev1) .
 
   BIND(geo:Feature as ?gf2) .
-  BIND(lpgvs:LeveeArea as ?ft2) .
+  BIND(lpgvs:Project as ?ft2) .
   ?f2 a ?ft2 .
   ?f2 geo:hasGeometry ?g2 .
   ?g2 geo:asWKT ?wkt2 .
   ?f2 rdfs:label ?lbl2 .
-  ?f2 lpgvs:HasFloodZone ?f3 .
+  ?f2 lpgs:GeoObject-code ?f2code .
+
+  ?imp <http://www.w3.org/2004/02/skos/core#altLabel> ?f2code .
+  ?imp <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dime.usace.mil/ontologies/cwbi-concept#Remis_Project> .
+  ?imp <http://dime.usace.mil/ontologies/cwbi-concept#Program> ?f3 .
   
-  BIND(lpgvs:HasFloodZone as ?e2) .
+  BIND(<http://dime.usace.mil/ontologies/cwbi-concept#Program> as ?e2) .
   BIND(?f3 as ?ev2) .
 
   BIND(geo:Feature as ?gf3) .
-  BIND(lpgvs:LeveedArea as ?ft3) .
-  ?f3 a ?ft3 .
-  ?f3 geo:hasGeometry ?g3 .
-  ?g3 geo:asWKT ?wkt3 .
-  ?f3 rdfs:label ?lbl3 .
-  ?f3 lpgvs:HasFloodRisk ?f4 .
-  
-  BIND(lpgvs:HasFloodRisk as ?e3) .
-  BIND(?f4 as ?ev3) .
-
-  BIND(geo:Feature as ?gf4) .
-  ?f4 a ?ft4 .
-  ?f4 geo:hasGeometry ?g4 .
-  ?g4 geo:asWKT ?wkt4 .
-  ?f4 rdfs:label ?lbl4
+  ?f3 a <http://dime.usace.mil/ontologies/cwbi-concept#Program> .
+  BIND(<http://dime.usace.mil/ontologies/cwbi-concept#Program> as ?ft3) .
+  ?f3 <http://www.w3.org/2004/02/skos/core#altLabel> ?lbl3
 } 
 LIMIT 30`,
         styles: defaultStyles

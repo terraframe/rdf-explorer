@@ -253,6 +253,7 @@ export class ExplorerComponent implements AfterViewInit {
         let geoObjects = gosByType[type];
 
         if (geoObjects.length == 0) continue;
+        if (geoObjects[0].geometry == null) continue; // TODO : Find this out at the type level...
 
         let geojson: any = {
             type: "FeatureCollection",
