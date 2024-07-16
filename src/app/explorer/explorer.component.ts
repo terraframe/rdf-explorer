@@ -120,20 +120,25 @@ export class ExplorerComponent implements AfterViewInit {
 
     let url = this.sparqlUrl + "?query=" + encodeURIComponent(this.queryConfig.sparql!);
 
-    const respObj = await fetch(url);
-    this.loadingQuads = false;
+    try {
+        const respObj = await fetch(url);
 
-    if (!respObj.ok || respObj.status >= 400) {
-        let text = await respObj.text();
-        this.importError = text;
-        return;
+        if (!respObj.ok || respObj.status >= 400) {
+            let text = await respObj.text();
+            this.importError = text;
+            return;
+        }
+
+        const rs: SPARQLResultSet = await respObj.json();
+
+        this.processSPARQLResponse(rs)
+
+        this.modalRef?.hide();
+    } catch (e: any) {
+        this.importError = e.message;
+    } finally {
+        this.loadingQuads = false;
     }
-
-    const rs: SPARQLResultSet = await respObj.json();
-
-    this.processSPARQLResponse(rs)
-
-    this.modalRef?.hide();
   }
 
   processSPARQLResponse(rs: SPARQLResultSet) : void {
@@ -192,7 +197,7 @@ export class ExplorerComponent implements AfterViewInit {
         };
     });
 
-    console.log(this.geoObjects);
+    // console.log(this.geoObjects);
 
     this.orderedTypes = Object.keys(this.geoObjectsByType());
     this.orderedTypes = this.orderedTypes.sort((a,b) => {

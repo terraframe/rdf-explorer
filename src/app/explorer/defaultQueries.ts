@@ -15,7 +15,7 @@ let defaultStyles = {
     'lpgvs:Dam':{color:'#D5F279', order:0},
     'lpgvs:Project':{color:'#C0F279', order:6},
     'lpgvs:Watershed':{color:'#79F2C9', order:4},
-    'lpgvs:LeveeArea':{color:'#79C7F2', order:4}, 
+    'lpgvs:LeveeArea':{color:'#ffff99', order:4}, 
     'lpgvs:RealProperty':{color:'#79F294', order:0},
     'lpgvs:Reservoir':{color:'#94F279', order:5},
     'lpgvs:ChannelArea':{color:'#F279B7',order:4},
@@ -25,7 +25,7 @@ let defaultStyles = {
     'lpgvs:ChannelLine':{color:'#79F2A0',order:1},
     'lpgvs:LeveedArea':{color:'#C379F2',order:4},
     'lpgvs:River':{color:'#7999F2',order:2},
-    'lpgvs:SchoolZone':{color:'#BCF279',order:1},
+    'lpgvs:SchoolZone':{color:'#BCF279',order:6},
     'lpgvs:Levee':{color:'#F279E0',order:0},
     'lpgvs:WaterLock':{color:'#79F2E2',order:0},
     'lpgvs:UsaceRecreationArea':{color:'#F2BE79',order:3}
@@ -136,15 +136,22 @@ WHERE {
 LIMIT 30`,
         styles: defaultStyles
     },
+
+    /* This hydrology query is incredibly difficult to expand past this pooint because:
+     * 1. Our dataset has no dams
+     * 2. The LeveeAreas returned from this dataset don't have any FloodZones (otherwise we could join this query with query 1)
+     */
     {
       title: "Hydrology",
       sparql: prefixes + `
 SELECT
 ?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # ChannelReach
 ?e1 ?ev1 # FlowsThrough
+?e3 ?ev3 # ChannelHasLevee
 ?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Reservoir
 ?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # River
 ?e2 ?ev2 # River FlowsInto Reservoir
+?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # LeveeArea
 FROM lpgv: 
 WHERE {
   BIND(geo:Feature as ?gf1) .
@@ -154,6 +161,7 @@ WHERE {
   ?g1 geo:asWKT ?wkt1 .
   ?f1 rdfs:label ?lbl1 .
   ?f1 lpgvs:FlowsThrough ?f2 .
+  ?f1 lpgvs:ChannelHasLevee ?f4 .
 
   BIND(lpgvs:FlowsThrough as ?e1) .
   BIND(?f2 as ?ev1) .
@@ -175,9 +183,62 @@ WHERE {
   ?f3 geo:hasGeometry ?g3 .
   ?g3 geo:asWKT ?wkt3 .
   ?f3 rdfs:label ?lbl3
+  
+  BIND(lpgvs:ChannelHasLevee as ?e3) .
+  BIND(?f4 as ?ev3) .
+
+  BIND(geo:Feature as ?gf4) .
+  BIND(lpgvs:LeveeArea as ?ft4) .
+  ?f4 a ?ft4 .
+  ?f4 geo:hasGeometry ?g4 .
+  ?g4 geo:asWKT ?wkt4 .
+  ?f4 rdfs:label ?lbl4
 } 
-LIMIT 30
+LIMIT 100
 `,
+      styles: defaultStyles
+    },
+    {
+      title: "Flood risk structures and school zone shelters",
+      sparql: prefixes + `
+SELECT
+?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea
+?e3 ?ev3 # ConnectedTo
+?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # Object of interest
+?e4 ?ev4 # ConnectedTo
+?gf5 ?ft5 ?f5 ?wkt5 ?lbl5 # Also show school zones
+FROM lpgv: 
+WHERE {
+  BIND(geo:Feature as ?gf3) .
+  BIND(lpgvs:LeveedArea as ?ft3) .
+  ?f3 a ?ft3 .
+  ?f3 geo:hasGeometry ?g3 .
+  ?g3 geo:asWKT ?wkt3 .
+  ?f3 rdfs:label ?lbl3 .
+  ?f3 lpgvs:HasFloodRisk ?f4 .
+  
+  BIND(lpgvs:HasFloodRisk as ?e3) .
+  BIND(?f4 as ?ev3) .
+
+  BIND(geo:Feature as ?gf4) .
+  BIND(lpgvs:School as ?ft4) .
+  ?f4 a ?ft4 .
+  ?f4 geo:hasGeometry ?g4 .
+  ?g4 geo:asWKT ?wkt4 .
+  ?f4 rdfs:label ?lbl4 .
+  ?f4 lpgvs:HasSchoolZone ?f5 .
+  
+  BIND(lpgvs:HasSchoolZone as ?e4) .
+  BIND(?f5 as ?ev4) .
+  
+  BIND(geo:Feature as ?gf5) .
+  BIND(lpgvs:SchoolZone as ?ft5) .
+  ?f5 a ?ft5 .
+  ?f5 geo:hasGeometry ?g5 .
+  ?g5 geo:asWKT ?wkt5 .
+  ?f5 rdfs:label ?lbl5 .
+} 
+LIMIT 30`,
       styles: defaultStyles
     }
 ];
