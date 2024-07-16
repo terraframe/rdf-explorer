@@ -133,12 +133,34 @@ export class ExplorerComponent implements AfterViewInit {
 
         this.processSPARQLResponse(rs)
 
+        this.loadingQuads = false;
         this.modalRef?.hide();
+
+        this.render();
     } catch (e: any) {
         this.importError = e.message;
     } finally {
         this.loadingQuads = false;
     }
+  }
+
+  render(): void {
+    this.orderedTypes = Object.keys(this.geoObjectsByType());
+    this.orderedTypes = this.orderedTypes.sort((a,b) => {
+        return (this.resolvedStyles[a]?.order ?? 999) - (this.resolvedStyles[b]?.order ?? 999);
+    });
+
+    this.calculateTypeLegend();
+
+    this.mapGeoObjects();
+
+    if (this.queryConfig.focus != null) {
+        this.zoomTo(this.queryConfig.focus);
+    } else if (this.geoObjects.length > 0) {
+        this.zoomTo(this.geoObjects[0].properties.uri);
+    }
+
+    this.graphExplorer.renderGeoObjects(this, this.geoObjects);
   }
 
   processSPARQLResponse(rs: SPARQLResultSet) : void {
@@ -198,20 +220,6 @@ export class ExplorerComponent implements AfterViewInit {
     });
 
     // console.log(this.geoObjects);
-
-    this.orderedTypes = Object.keys(this.geoObjectsByType());
-    this.orderedTypes = this.orderedTypes.sort((a,b) => {
-        return (this.resolvedStyles[a]?.order ?? 999) - (this.resolvedStyles[b]?.order ?? 999);
-    });
-
-    this.calculateTypeLegend();
-
-    this.mapGeoObjects();
-
-    if (this.geoObjects.length > 0)
-        this.zoomTo(this.geoObjects[0].properties.uri);
-
-    this.graphExplorer.renderGeoObjects(this, this.geoObjects);
   }
 
   onSelectQuery() {
@@ -381,12 +389,16 @@ export class ExplorerComponent implements AfterViewInit {
 
         let newStyles: any = {};
         for (const [key, value] of Object.entries(this.queryConfig.styles)) {
+            let newKey = key;
+
             for (const [prefix, uri] of Object.entries(prefixes)) {
                 if (key.startsWith(prefix)) {
-                    newStyles[key.replace(prefix, uri)] = value;
+                    newKey = key.replace(prefix, uri);
                     break;
                 }
             }
+
+            newStyles[newKey] = value;
         }
         this.resolvedStyles = newStyles;
 

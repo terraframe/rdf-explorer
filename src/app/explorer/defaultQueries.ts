@@ -1,7 +1,7 @@
 
 export interface StyleConfig { [key: string]: {color:string, order:number} }
 
-export interface QueryConfig { title:string, sparql: string, styles: StyleConfig }
+export interface QueryConfig { title:string, sparql: string, styles: StyleConfig, focus?: string }
 
 let prefixes:string = `PREFIX lpgs: <https://dev-georegistry.geoprism.net/lpg/rdfs#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -28,7 +28,8 @@ let defaultStyles = {
     'lpgvs:SchoolZone':{color:'#BCF279',order:6},
     'lpgvs:Levee':{color:'#F279E0',order:0},
     'lpgvs:WaterLock':{color:'#79F2E2',order:0},
-    'lpgvs:UsaceRecreationArea':{color:'#F2BE79',order:3}
+    'lpgvs:UsaceRecreationArea':{color:'#F2BE79',order:3},
+    'http://dime.usace.mil/ontologies/cwbi-concept#Program':{color:'#FF5733',order:0}
 };
 
 export const defaultQueries: QueryConfig[] = [
@@ -85,7 +86,8 @@ WHERE {
   ?f4 rdfs:label ?lbl4
 } 
 LIMIT 30`,
-        styles: defaultStyles
+        styles: defaultStyles,
+        focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#Project-PROJ819"
     },
     {
         title: "ChannelReach ConnectedTo ProjectArea PartOf Program",
@@ -133,8 +135,10 @@ WHERE {
   BIND(<http://dime.usace.mil/ontologies/cwbi-concept#Program> as ?ft3) .
   ?f3 <http://www.w3.org/2004/02/skos/core#altLabel> ?lbl3
 } 
-LIMIT 30`,
-        styles: defaultStyles
+LIMIT 100`,
+        styles: defaultStyles,
+        focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#ChannelReach-CESWL_AR_06_TER_5",
+        // focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#ChannelReach-CENWO_MO_10_OML_5"
     },
 
     /* This hydrology query is incredibly difficult to expand past this pooint because:
@@ -202,13 +206,24 @@ LIMIT 100
       title: "Flood risk structures and school zone shelters",
       sparql: prefixes + `
 SELECT
-?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveedArea1
+?e5 ?ev5 # ConnectedTo
+?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea2
 ?e3 ?ev3 # ConnectedTo
-?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # Object of interest
+?gf6 ?ft6 ?f6 ?wkt6 ?lbl6 # Hospital
+?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # School
 ?e4 ?ev4 # ConnectedTo
-?gf5 ?ft5 ?f5 ?wkt5 ?lbl5 # Also show school zones
+?gf5 ?ft5 ?f5 ?wkt5 ?lbl5 # SchoolZone
 FROM lpgv: 
 WHERE {
+  BIND(geo:Feature as ?gf2) .
+  BIND(lpgvs:LeveedArea as ?ft2) .
+  ?f2 a ?ft2 .
+  ?f2 geo:hasGeometry ?g2 .
+  ?g2 geo:asWKT ?wkt2 .
+  ?f2 rdfs:label ?lbl2 .
+  ?f2 lpgvs:HasFloodRisk ?f6 .
+  
   BIND(geo:Feature as ?gf3) .
   BIND(lpgvs:LeveedArea as ?ft3) .
   ?f3 a ?ft3 .
@@ -219,7 +234,16 @@ WHERE {
   
   BIND(lpgvs:HasFloodRisk as ?e3) .
   BIND(?f4 as ?ev3) .
+  BIND(lpgvs:HasFloodRisk as ?e5) .
+  BIND(?f6 as ?ev5) .
 
+  BIND(geo:Feature as ?gf6) .
+  BIND(lpgvs:Hospital as ?ft6) .
+  ?f6 a ?ft6 .
+  ?f6 geo:hasGeometry ?g6 .
+  ?g6 geo:asWKT ?wkt6 .
+  ?f6 rdfs:label ?lbl6 .
+  
   BIND(geo:Feature as ?gf4) .
   BIND(lpgvs:School as ?ft4) .
   ?f4 a ?ft4 .
@@ -238,7 +262,37 @@ WHERE {
   ?g5 geo:asWKT ?wkt5 .
   ?f5 rdfs:label ?lbl5 .
 } 
-LIMIT 30`,
+LIMIT 100`,
       styles: defaultStyles
+    },
+    {
+      title: "Flood risk hospitals",
+      sparql: prefixes + `
+SELECT
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveedArea1
+?e5 ?ev5 # ConnectedTo
+?gf6 ?ft6 ?f6 ?wkt6 ?lbl6 # Hospital
+FROM lpgv: 
+WHERE {
+  BIND(geo:Feature as ?gf2) .
+  BIND(lpgvs:LeveedArea as ?ft2) .
+  ?f2 a ?ft2 .
+  ?f2 geo:hasGeometry ?g2 .
+  ?g2 geo:asWKT ?wkt2 .
+  ?f2 rdfs:label ?lbl2 .
+  ?f2 lpgvs:HasFloodRisk ?f6 .
+  
+  BIND(lpgvs:HasFloodRisk as ?e5) .
+  BIND(?f6 as ?ev5) .
+
+  BIND(geo:Feature as ?gf6) .
+  BIND(lpgvs:Hospital as ?ft6) .
+  ?f6 a ?ft6 .
+  ?f6 geo:hasGeometry ?g6 .
+  ?g6 geo:asWKT ?wkt6 .
+  ?f6 rdfs:label ?lbl6 .
+} 
+LIMIT 100`,
+        styles: defaultStyles
     }
 ];
