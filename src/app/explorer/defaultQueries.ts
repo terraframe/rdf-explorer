@@ -17,7 +17,7 @@ let defaultStyles = {
     'lpgvs:Watershed':{color:'#79F2C9', order:4},
     'lpgvs:LeveeArea':{color:'#79C7F2', order:4}, 
     'lpgvs:RealProperty':{color:'#79F294', order:0},
-    'lpgvs:Reservoir':{color:'#94F279', order:0},
+    'lpgvs:Reservoir':{color:'#94F279', order:5},
     'lpgvs:ChannelArea':{color:'#F279B7',order:4},
     'lpgvs:ChannelReach':{color:'#79DAF2',order:4},
     'lpgvs:RecreationArea':{color:'#F2E779',order:3},
@@ -140,28 +140,41 @@ LIMIT 30`,
       title: "Hydrology",
       sparql: prefixes + `
 SELECT
-?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # River
-?e1 ?ev1 # FlowsInto
-?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Object
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # ChannelReach
+?e1 ?ev1 # FlowsThrough
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Reservoir
+?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # River
+?e2 ?ev2 # River FlowsInto Reservoir
 FROM lpgv: 
 WHERE {
   BIND(geo:Feature as ?gf1) .
-  BIND(lpgvs:River as ?ft1) .
+  BIND(lpgvs:ChannelReach as ?ft1) .
   ?f1 a ?ft1 .
   ?f1 geo:hasGeometry ?g1 .
   ?g1 geo:asWKT ?wkt1 .
   ?f1 rdfs:label ?lbl1 .
-  ?f1 lpgvs:FlowsInto ?f2 .
-  ?f1 lpgvs:FlowsThrough ?f3 .
+  ?f1 lpgvs:FlowsThrough ?f2 .
 
-  BIND(lpgvs:FlowsInto as ?e1) .
+  BIND(lpgvs:FlowsThrough as ?e1) .
   BIND(?f2 as ?ev1) .
 
   BIND(geo:Feature as ?gf2) .
+  BIND(lpgvs:Reservoir as ?ft2) .
   ?f2 a ?ft2 .
   ?f2 geo:hasGeometry ?g2 .
   ?g2 geo:asWKT ?wkt2 .
-  ?f2 rdfs:label ?lbl2
+  ?f2 rdfs:label ?lbl2 .
+  ?f3 lpgvs:FlowsInto ?f2 .
+
+  BIND(lpgvs:FlowsInto as ?e2) .
+  BIND(?f2 as ?ev2) .
+
+  BIND(geo:Feature as ?gf3) .
+  BIND(lpgvs:River as ?ft3) .
+  ?f3 a ?ft3 .
+  ?f3 geo:hasGeometry ?g3 .
+  ?g3 geo:asWKT ?wkt3 .
+  ?f3 rdfs:label ?lbl3
 } 
 LIMIT 30
 `,

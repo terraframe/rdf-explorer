@@ -181,7 +181,9 @@ export class ExplorerComponent implements AfterViewInit {
                         if (geoObject.properties.edges[lastReadUri] == null) {
                             geoObject.properties.edges[lastReadUri] = [] as any;
                         }
-                        geoObject.properties.edges[lastReadUri].push(r[v].value);
+                        if (geoObject.properties.edges[lastReadUri].indexOf(r[v].value) === -1) {
+                            geoObject.properties.edges[lastReadUri].push(r[v].value);
+                        }
 
                         lastReadUri = null;
                     }
@@ -189,6 +191,8 @@ export class ExplorerComponent implements AfterViewInit {
             }
         };
     });
+
+    console.log(this.geoObjects);
 
     this.orderedTypes = Object.keys(this.geoObjectsByType());
     this.orderedTypes = this.orderedTypes.sort((a,b) => {
@@ -427,7 +431,7 @@ export class ExplorerComponent implements AfterViewInit {
                 essential: true
             });
         }
-    } else if (geometryType === "MULTIPOLYGON" || geometryType === "POLYGON" || geometryType === "MIXED") {
+    } else if (geometryType === "MULTIPOLYGON" || geometryType === "MIXED") {
         let coords = geojson.coordinates;
 
         if (coords) {
@@ -437,6 +441,21 @@ export class ExplorerComponent implements AfterViewInit {
                     subpoly.forEach((coord: any) => {
                         bounds.extend(coord);
                     });
+                });
+            });
+
+            this.map?.fitBounds(bounds, {
+                padding: 20
+            });
+        }
+    } else if (geometryType === "POLYGON") {
+        let coords = geojson.coordinates;
+
+        if (coords) {
+            let bounds = new LngLatBounds();
+            coords.forEach((polys: any) => {
+                polys.forEach((coord: any) => {
+                    bounds.extend(coord);
                 });
             });
 
@@ -454,6 +473,21 @@ export class ExplorerComponent implements AfterViewInit {
                     subline.forEach((coord: any) => {
                         bounds.extend(coord);
                     });
+                });
+            });
+
+            this.map?.fitBounds(bounds, {
+                padding: 20
+            });
+        }
+    } else if (geometryType === "MULTILINESTRING") {
+        let coords = geojson.coordinates;
+
+        if (coords) {
+            let bounds = new LngLatBounds();
+            coords.forEach((lines: any) => {
+                lines.forEach((lngLat: any) => {
+                    bounds.extend(lngLat);
                 });
             });
 
