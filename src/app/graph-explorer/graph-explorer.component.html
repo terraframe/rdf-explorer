@@ -47,7 +47,7 @@
             <ng-template #nodeTemplate let-node>
               <svg:g (click)=" onClickNode(node)" class="node" [style.cursor]="false ? 'default' : 'pointer'" >
                 <svg:polygon [attr.points]="getHexagonPoints(node)"
-                  [attr.fill]="node.type == null ? node.data.color : this.getTypeLegend()![node.type].color"
+                  [attr.fill]="getSelectedId() != null && getSelectedId() == node.id ? SELECTED_NODE_COLOR : this.getTypeLegend()![node.type].color"
                   ></polygon>
 
                 <foreignObject

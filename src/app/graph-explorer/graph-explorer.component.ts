@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { ExplorerComponent, GeoObject } from '../explorer/explorer.component';
+import { ExplorerComponent, GeoObject, SELECTED_COLOR } from '../explorer/explorer.component';
 import { CommonModule } from '@angular/common';
 import { Edge, Node, GraphComponent, GraphModule } from '@swimlane/ngx-graph';
 
@@ -37,8 +37,6 @@ export interface TreeData {
 
 export const DRAW_SCALE_MULTIPLIER: number = 1.0;
 
-export const SELECTED_NODE_COLOR: string = "#4287f5";
-
 export const GRAPH_GO_LABEL_COLOR: string = "black";
 export const GRAPH_CIRCLE_FILL: string = "#999";
 export const GRAPH_LINE_COLOR: string = "#999";
@@ -71,7 +69,7 @@ export class GraphExplorerComponent {
 
   public DIMENSIONS = DIMENSIONS;
 
-  public SELECTED_NODE_COLOR = SELECTED_NODE_COLOR;
+  public SELECTED_NODE_COLOR = SELECTED_COLOR;
 
   public svgHeight: number | null = null;
   public svgWidth: number | null = null;
@@ -131,6 +129,12 @@ export class GraphExplorerComponent {
     return this.explorer?.getTypeLegend();
   }
 
+  public getSelectedId() {
+    if (this.explorer?.selectedObject == null) return null;
+
+    return this.uriToId(this.explorer!.selectedObject.properties.uri);
+  }
+
   uriToId(uri: string): string {
     return "a" + uri;
   }
@@ -170,7 +174,7 @@ export class GraphExplorerComponent {
   }
 
   public onClickNode(node: any) {
-    this.explorer?.zoomTo(this.idToUri(node.id));
+    this.explorer?.selectObject(this.idToUri(node.id), true);
   }
 
   public zoomToUri(uri: string) {

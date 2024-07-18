@@ -7,7 +7,7 @@ import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
 import { FormsModule } from '@angular/forms';
 import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { defaultQueries, StyleConfig, QueryConfig } from './defaultQueries';
+import { defaultQueries, StyleConfig, QueryConfig, stateCentroid, locationCriteriaSparql } from './defaultQueries';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import JSON5 from 'json5'
 
@@ -31,8 +31,10 @@ export interface SPARQLResultSet {
 export interface GeoObject {
     type: string,
     geometry: GeoJSONGeometry,
-    properties: { uri: string, type:string, label: string, edges: { [key: string]: [string] }, [key: string]: any }
+    properties: { id: number; uri: string, type:string, label: string, edges: { [key: string]: [string] }, [key: string]: any }
 }
+
+export const SELECTED_COLOR = "#ffcc00";
 
 @Component({
   selector: 'app-explorer',
@@ -74,9 +76,17 @@ export class ExplorerComponent implements AfterViewInit {
 
   public sparqlUrl: string = "http://staging-georegistry.geoprism.net:3030/usace/sparql";
   
-  public queryConfig: QueryConfig = defaultQueries[0];
+  public queryConfig: QueryConfig = this.defaultQueries[0];
 
   public stylesText: string = "";
+
+  public sparqlText: string = "";
+
+  public locationRestrict: any = null;
+
+  public locationRestrictOptions!: {label: string, centroid: string}[];
+
+  public selectedObject?: GeoObject;
 
   resolvedStyles!: StyleConfig;
 
@@ -99,6 +109,8 @@ export class ExplorerComponent implements AfterViewInit {
   
   ngAfterViewInit() {
       this.stylesText = JSON.stringify(this.queryConfig.styles, null, 2);
+      this.sparqlText = this.queryConfig.sparql;
+      this.locationRestrictOptions = Object.entries(stateCentroid).map((e) => ({"label": e[0], "centroid": e[1]}));
 
       this.parseStylesText();
       this.initializeMap();
@@ -118,7 +130,7 @@ export class ExplorerComponent implements AfterViewInit {
   async loadSparql() {
     this.loadingQuads = true;
 
-    let url = this.sparqlUrl + "?query=" + encodeURIComponent(this.queryConfig.sparql!);
+    let url = this.sparqlUrl + "?query=" + encodeURIComponent(this.sparqlText!);
 
     try {
         const respObj = await fetch(url);
@@ -134,10 +146,17 @@ export class ExplorerComponent implements AfterViewInit {
         this.processSPARQLResponse(rs)
 
         this.loadingQuads = false;
+
+        if (this.geoObjects.length == 0) {
+            this.importError = "The query did not return any results!";
+            return;
+        }
+
         this.modalRef?.hide();
 
         this.render();
     } catch (e: any) {
+        console.log(e);
         this.importError = e.message;
     } finally {
         this.loadingQuads = false;
@@ -154,7 +173,7 @@ export class ExplorerComponent implements AfterViewInit {
 
     this.mapGeoObjects();
 
-    if (this.queryConfig.focus != null) {
+    if (this.queryConfig.focus != null && this.geoObjects.find(go => go.properties.uri === this.queryConfig.focus) != null) {
         this.zoomTo(this.queryConfig.focus);
     } else if (this.geoObjects.length > 0) {
         this.zoomTo(this.geoObjects[0].properties.uri);
@@ -173,6 +192,7 @@ export class ExplorerComponent implements AfterViewInit {
         // rs.head.vars.forEach(v => {
         for (let i: number = 0; i < rs.head.vars.length; ++i) {
             let v = rs.head.vars[i];
+            if (r[v] == null) continue;
 
             if (r[v].type === "uri" && r[v].value === ExplorerComponent.GEO_FEATURE) {
                 lastReadUri = null;
@@ -193,6 +213,7 @@ export class ExplorerComponent implements AfterViewInit {
 
                     geoObject.properties.type = r[v].value;
                     geoObject.properties.uri = uri;
+                    geoObject.properties.id = Math.floor(Math.random() * 2147483647);
                     readGeoObjectUri = true;
                     i++;
                 } else if (geoObject == null) {
@@ -224,12 +245,30 @@ export class ExplorerComponent implements AfterViewInit {
 
   onSelectQuery() {
     this.stylesText = JSON.stringify(this.queryConfig.styles, null, 2);
+    this.sparqlText = (" " + this.queryConfig.sparql).slice(1); // Create a copy of the string from the query config so we don't modify it
+    this.locationRestrict = null;
   }
 
   calculateTypeLegend() {
     this.typeLegend = {};
 
-    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: ExplorerComponent.uriToLabel(type), color: (this.resolvedStyles[type] != null ? this.resolvedStyles[type].color : ColorGen().hexString()) });
+    this.orderedTypes.forEach(type => this.typeLegend[type] = { label: this.labelForType(type), color: (this.resolvedStyles[type] != null ? this.resolvedStyles[type].color : ColorGen().hexString()) });
+  }
+
+  onRestrictLocation() {
+    if (this.locationRestrict == null) { this.sparqlText = this.queryConfig.sparql; return; }
+
+    let criteria = locationCriteriaSparql.replace("{{centroid}}", this.locationRestrict.centroid).replace("{{wktVar}}", this.queryConfig.wktVar);
+
+    this.sparqlText = this.queryConfig.sparql.replace("}\nLIMIT",  criteria + "\n}\nLIMIT");
+  }
+
+  labelForType(typeUri: string): string {
+    if (this.resolvedStyles[typeUri].label) {
+        return this.resolvedStyles[typeUri].label as string;
+    } else {
+        return ExplorerComponent.uriToLabel(typeUri);
+    }
   }
 
   public static uriToLabel(uri: string): string {
@@ -287,7 +326,8 @@ export class ExplorerComponent implements AfterViewInit {
 
         this.map?.addSource(type, {
             type: "geojson",
-            data: geojson
+            data: geojson,
+            promoteId:'id' // A little surprised at mapbox here, but without this param it won't use the id property for the feature id
         });
 
         this.map?.addLayer(this.layerConfig(type, geoObjects[0].geometry.type.toUpperCase()),
@@ -322,14 +362,24 @@ export class ExplorerComponent implements AfterViewInit {
 
     if (geometryType === "MULTIPOLYGON" || geometryType === "POLYGON") {
         layerConfig.paint = {
-            'fill-color': this.typeLegend[type].color,
+            'fill-color': [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                SELECTED_COLOR,
+                this.typeLegend[type].color
+            ],
             'fill-opacity': 0.8
         };
         layerConfig.type = "fill";
     } else if (geometryType === "POINT" || geometryType === "MULTIPOINT") {
         layerConfig.paint = {
             "circle-radius": 10,
-            "circle-color": this.typeLegend[type].color,
+            "circle-color": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                SELECTED_COLOR,
+                this.typeLegend[type].color
+            ],
             "circle-stroke-width": 2,
             "circle-stroke-color": "#FFFFFF"
         };
@@ -340,7 +390,12 @@ export class ExplorerComponent implements AfterViewInit {
             "line-cap": "round"
         }
         layerConfig.paint = {
-            "line-color": this.typeLegend[type].color,
+            "line-color": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                SELECTED_COLOR,
+                this.typeLegend[type].color
+            ],
             "line-width": 3
         }
         layerConfig.type = "line";
@@ -371,7 +426,7 @@ export class ExplorerComponent implements AfterViewInit {
   parsePrefixesFromSparql(): {[key: string]: string} {
     let out: any = {};
 
-    let matches = this.queryConfig.sparql?.matchAll(/PREFIX (.*:) <(.*)>/g);
+    let matches = this.sparqlText?.matchAll(/PREFIX (.*:) <(.*)>/g);
     let result = matches!.next();
     while (!result.done) {
         out[result.value[1]] = result.value[2];
@@ -577,7 +632,7 @@ export class ExplorerComponent implements AfterViewInit {
                       'tiles': [
                           'https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}@2x.jpg90?access_token=' + "pk.eyJ1IjoianVzdGlubGV3aXMiLCJhIjoiY2l0YnlpdWRkMDlkNjJ5bzZuMTR3MHZ3YyJ9.Ad0fQd8onRSYR9QZP6VyUw"
                       ],
-                      'tileSize': 512,
+                      'tileSize': 512
                   }
               },
               glyphs: "http://rdf-explorer.s3-website-us-west-2.amazonaws.com/glyphs/{fontstack}/{range}.pbf",
@@ -621,8 +676,36 @@ export class ExplorerComponent implements AfterViewInit {
             const feature = features[0];
 
             if (feature.properties['uri'] != null) {
-                this.graphExplorer.zoomToUri(feature.properties['uri']);
+                let uri = feature.properties['uri'];
+                this.selectObject(uri);
+                this.graphExplorer?.zoomToUri(uri);
             }
+        } else {
+            this.selectObject();
+        }
+    }
+
+    selectObject(uri?: string, zoomTo = false) {
+        let previousSelected = this.selectedObject;
+
+        if (uri != undefined) {
+            let go = this.geoObjects.find(go => go.properties.uri === uri);
+            if (go == null) return;
+
+            this.selectedObject = go;
+
+            if (zoomTo)
+                this.zoomTo(uri);
+        } else {
+            this.selectedObject = undefined;
+        }
+
+        if (this.selectedObject != null) {
+            this.map!.setFeatureState({source: this.selectedObject.properties.type, id: this.selectedObject.properties.id}, {selected: true});
+        }
+
+        if (previousSelected != null && previousSelected != this.selectedObject) {
+            this.map!.setFeatureState({source: previousSelected.properties.type, id: previousSelected.properties.id}, {selected: false});
         }
     }
   

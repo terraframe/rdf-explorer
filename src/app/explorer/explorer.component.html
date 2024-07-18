@@ -16,8 +16,14 @@
 					<option [ngValue]="q" *ngFor="let q of defaultQueries">{{q.title}}</option>
 				</select>
 
+				<label for="restrictLocation">Restrict To Location (Approximate)</label>
+				<select class="form-select" aria-label="Restrict to location" [(ngModel)]="locationRestrict" (ngModelChange)="onRestrictLocation()">
+					<option [ngValue]="null"></option>
+					<option [ngValue]="l" *ngFor="let l of locationRestrictOptions">{{l.label}}</option>
+				</select>
+
 				<label for="sparqlQuery">SPARQL Query</label>
-				<textarea id="sparqlText" [(ngModel)]="queryConfig.sparql"></textarea>
+				<textarea id="sparqlText" [(ngModel)]="sparqlText"></textarea>
 
 				<label for="sparqlQuery">Styles</label>
 				<textarea id="stylesText" [(ngModel)]="stylesText" (ngModelChange)="parseStylesText()"></textarea>
@@ -48,6 +54,22 @@
 	  
 	  <label>{{ typeLegend[type].label }}</label>
 	</div>
+  </div>
+
+  <div *ngIf="selectedObject" class="inspector">
+	<h2 class="inspector-title">Selected Object</h2>
+
+	<div class="inspector-content">
+		<label for="type">Type:</label>
+		<a id="type" [href]="selectedObject.properties.uri">{{selectedObject.properties.type}}</a>
+
+		<label for="uri">URI:</label>
+		<a id="uri" [href]="selectedObject.properties.uri">{{selectedObject.properties.uri}}</a>
+	</div>
+  </div>
+
+  <div>
+
   </div>
 
 </div>
