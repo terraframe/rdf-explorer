@@ -482,6 +482,54 @@ export class ExplorerComponent implements AfterViewInit {
     }
   }
 
+  getUsaceUri(go: GeoObject): string {
+    if (go.properties.uri.indexOf('dime.usace.mil') !== -1) {
+        return go.properties.uri;
+    } else if (go.properties.uri.indexOf('georegistry') !== -1) {
+        // Program
+        // http://dime.usace.mil/data/program#010180
+        // http://dime.usace.mil/data/program%23000510
+
+        // Channel Reach
+        // https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#ChannelReach-CESWL_AR_06_TER_5
+        // http://dime.usace.mil/data/channelReach%23CESWT_AR_16_WBF_13
+
+        // Project
+        // https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#Project-30000574
+        // http://dime.usace.mil/data/remis_project%23PROJ644
+
+        let uri = go.properties.uri
+            .replace("https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#", "http://dime.usace.mil/data/");
+
+        if (uri.indexOf("Project-") !== -1) {
+            uri = uri.replace("Project-", "remis_project%23");
+        } else {
+            uri = uri.replace("-", "%23");
+            console.log(go);
+        }
+
+        if (uri.indexOf("ChannelReach") !== -1) {
+            uri = uri.replace("ChannelReach", "channelReach");
+        }
+        
+        return uri;
+    } else {
+        return go.properties.uri;
+    }
+  }
+
+  getObjectUrl(go: GeoObject): string {
+    if (go.properties.type.indexOf("Program") != -1
+        || go.properties.type.indexOf("ChannelReach") != -1
+        || go.properties.uri.indexOf("Project") != -1
+        || go.properties.uri.indexOf("usace.mil") != -1
+    ) {
+        return "https://prism.usace-dime.net/view?uri=" + this.getUsaceUri(go);
+    } else {
+        return go.properties.uri;
+    }
+  }
+
   zoomTo(uri: string)
   {
     let geoObject = this.geoObjects.find(go => go.properties.uri === uri);

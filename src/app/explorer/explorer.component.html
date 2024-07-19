@@ -61,10 +61,12 @@
 
 	<div class="inspector-content">
 		<label for="type">Type:</label>
-		<a id="type" [href]="selectedObject.properties.uri">{{selectedObject.properties.type}}</a>
+		<!-- <a id="type" [href]="selectedObject.properties.uri">{{selectedObject.properties.type}}</a> -->
+		 <span>{{selectedObject.properties.type}}</span>
 
 		<label for="uri">URI:</label>
-		<a id="uri" [href]="selectedObject.properties.uri">{{selectedObject.properties.uri}}</a>
+		<span *ngIf="getObjectUrl(selectedObject).indexOf('georegistry') !== -1">{{selectedObject.properties.uri}}</span>
+		<a *ngIf="getObjectUrl(selectedObject).indexOf('georegistry') === -1" id="uri" [href]="getObjectUrl(selectedObject)">{{getUsaceUri(selectedObject)}}</a>
 	</div>
   </div>
 
