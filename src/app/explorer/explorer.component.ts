@@ -34,7 +34,7 @@ export interface GeoObject {
     properties: { id: number; uri: string, type:string, label: string, edges: { [key: string]: [string] }, [key: string]: any }
 }
 
-export const SELECTED_COLOR = "#ffcc00";
+export const SELECTED_COLOR = "#800000";
 
 @Component({
   selector: 'app-explorer',
@@ -239,6 +239,8 @@ export class ExplorerComponent implements AfterViewInit {
             }
         };
     });
+
+    this.geoObjects.forEach(go => go.properties.label = (go.properties.label != null && go.properties.label != "") ? go.properties.label : go.properties.uri.substring(go.properties.uri.lastIndexOf("#")+1));
 
     // console.log(this.geoObjects);
   }

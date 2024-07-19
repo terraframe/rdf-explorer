@@ -57,7 +57,7 @@
   </div>
 
   <div *ngIf="selectedObject" class="inspector">
-	<h2 class="inspector-title">Selected Object</h2>
+	<h2 class="inspector-title">{{selectedObject.properties.label}}</h2>
 
 	<div class="inspector-content">
 		<label for="type">Type:</label>
