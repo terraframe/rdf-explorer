@@ -141,7 +141,7 @@ WHERE {
   ?f4 rdfs:label ?lbl4
 }
 LIMIT 30`,
-        wktVar: "?wkt1",
+        wktVar: "COALESCE(?wkt5,?wkt4,?wkt3,?wkt2,?wkt1)",
         styles: defaultStyles,
         focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#Project-PROJ819"
     },
@@ -192,7 +192,7 @@ WHERE {
   ?f3 <http://www.w3.org/2004/02/skos/core#altLabel> ?lbl3
 }
 LIMIT 100`,
-        wktVar: "?wkt1",
+        wktVar: "COALESCE(?wkt5,?wkt4,?wkt3,?wkt2,?wkt1)",
         styles: defaultStyles,
         focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#ChannelReach-CESWL_AR_06_TER_5",
         // focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#ChannelReach-CENWO_MO_10_OML_5"
@@ -257,106 +257,88 @@ WHERE {
 }
 LIMIT 100
 `,
-      wktVar: "?wkt1",
+      wktVar: "COALESCE(?wkt5,?wkt4,?wkt3,?wkt2,?wkt1)",
       styles: defaultStyles
     },
     {
       title: "Flood risk structures and school zone shelters",
       sparql: prefixes + `
 SELECT
-?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveedArea1
-?e5 ?ev5 # ConnectedTo
-?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea2
-?e3 ?ev3 # ConnectedTo
-?gf6 ?ft6 ?f6 ?wkt6 ?lbl6 # Hospital
-?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # School
-?e4 ?ev4 # ConnectedTo
-?gf5 ?ft5 ?f5 ?wkt5 ?lbl5 # SchoolZone
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # LeveedArea1
+?e1 ?ev1 # ConnectedTo
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Structure
+?e2 ?ev2 # ConnectedTo (Optional)
+?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # SchoolZone (Optional)
 FROM lpgv: 
 WHERE {
+  BIND(geo:Feature as ?gf1) .
+  BIND(lpgvs:LeveedArea as ?ft1) .
+  ?f1 a ?ft1 .
+  ?f1 geo:hasGeometry ?g1 .
+  ?g1 geo:asWKT ?wkt1 .
+  ?f1 rdfs:label ?lbl1 .
+  ?f1 lpgvs:HasFloodRisk ?f2 .
+  
+  BIND(lpgvs:HasFloodRisk as ?e1) .
+  BIND(?f2 as ?ev1) .
+
   BIND(geo:Feature as ?gf2) .
-  BIND(lpgvs:LeveedArea as ?ft2) .
   ?f2 a ?ft2 .
   ?f2 geo:hasGeometry ?g2 .
   ?g2 geo:asWKT ?wkt2 .
   ?f2 rdfs:label ?lbl2 .
-  ?f2 lpgvs:HasFloodRisk ?f6 .
   
-  BIND(geo:Feature as ?gf3) .
-  BIND(lpgvs:LeveedArea as ?ft3) .
-  ?f3 a ?ft3 .
-  ?f3 geo:hasGeometry ?g3 .
-  ?g3 geo:asWKT ?wkt3 .
-  ?f3 rdfs:label ?lbl3 .
-  ?f3 lpgvs:HasFloodRisk ?f4 .
-  
-  BIND(lpgvs:HasFloodRisk as ?e3) .
-  BIND(?f4 as ?ev3) .
-  BIND(lpgvs:HasFloodRisk as ?e5) .
-  BIND(?f6 as ?ev5) .
-
-  BIND(geo:Feature as ?gf6) .
-  BIND(lpgvs:Hospital as ?ft6) .
-  ?f6 a ?ft6 .
-  ?f6 geo:hasGeometry ?g6 .
-  ?g6 geo:asWKT ?wkt6 .
-  ?f6 rdfs:label ?lbl6 .
-  
-  BIND(geo:Feature as ?gf4) .
-  BIND(lpgvs:School as ?ft4) .
-  ?f4 a ?ft4 .
-  ?f4 geo:hasGeometry ?g4 .
-  ?g4 geo:asWKT ?wkt4 .
-  ?f4 rdfs:label ?lbl4 .
-  ?f4 lpgvs:HasSchoolZone ?f5 .
-  
-  BIND(lpgvs:HasSchoolZone as ?e4) .
-  BIND(?f5 as ?ev4) .
-  
-  BIND(geo:Feature as ?gf5) .
-  BIND(lpgvs:SchoolZone as ?ft5) .
-  ?f5 a ?ft5 .
-  ?f5 geo:hasGeometry ?g5 .
-  ?g5 geo:asWKT ?wkt5 .
-  ?f5 rdfs:label ?lbl5 .
+  OPTIONAL {
+    ?f2 lpgvs:HasSchoolZone ?f3 .
+    
+    BIND(lpgvs:HasSchoolZone as ?e2) .
+    BIND(?f3 as ?ev2) .
+    
+    BIND(geo:Feature as ?gf3) .
+    BIND(lpgvs:SchoolZone as ?ft3) .
+    ?f3 a ?ft3 .
+    ?f3 geo:hasGeometry ?g3 .
+    ?g3 geo:asWKT ?wkt3 .
+    ?f3 rdfs:label ?lbl3 .
+  }
 }
 LIMIT 100`,
-      wktVar: "?wkt2",
+      wktVar: "COALESCE(?wkt5,?wkt4,?wkt3,?wkt2,?wkt1)",
       styles: defaultStyles
     },
     {
       title: "Flood risk hospitals",
       sparql: prefixes + `
 SELECT
-?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveedArea1
-?e5 ?ev5 # ConnectedTo
-?gf6 ?ft6 ?f6 ?wkt6 ?lbl6 # Hospital
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # LeveedArea1
+?e1 ?ev1 # ConnectedTo
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # Hospital
 FROM lpgv: 
 WHERE {
+  BIND(geo:Feature as ?gf1) .
+  BIND(lpgvs:LeveedArea as ?ft1) .
+  ?f1 a ?ft1 .
+  ?f1 geo:hasGeometry ?g1 .
+  ?g1 geo:asWKT ?wkt1 .
+  ?f1 rdfs:label ?lbl1 .
+  ?f1 lpgvs:HasFloodRisk ?f2 .
+  
+  BIND(lpgvs:HasFloodRisk as ?e1) .
+  BIND(?f2 as ?ev1) .
+
   BIND(geo:Feature as ?gf2) .
-  BIND(lpgvs:LeveedArea as ?ft2) .
+  BIND(lpgvs:Hospital as ?ft2) .
   ?f2 a ?ft2 .
   ?f2 geo:hasGeometry ?g2 .
   ?g2 geo:asWKT ?wkt2 .
   ?f2 rdfs:label ?lbl2 .
-  ?f2 lpgvs:HasFloodRisk ?f6 .
-  
-  BIND(lpgvs:HasFloodRisk as ?e5) .
-  BIND(?f6 as ?ev5) .
-
-  BIND(geo:Feature as ?gf6) .
-  BIND(lpgvs:Hospital as ?ft6) .
-  ?f6 a ?ft6 .
-  ?f6 geo:hasGeometry ?g6 .
-  ?g6 geo:asWKT ?wkt6 .
-  ?f6 rdfs:label ?lbl6 .
 }
 LIMIT 100`,
-        wktVar: "?wkt2",
+        wktVar: "COALESCE(?wkt5,?wkt4,?wkt3,?wkt2,?wkt1)",
         styles: defaultStyles
     },
     {
-      title: "Program Flood Risk",
+      title: "Specific Program Flood Risk (800510)",
       sparql: prefixes + `PREFIX lds: <http://dime.usace.mil/data/dataset#TERRAFRAME_CHANNEL_TO_PROJECT>
 PREFIX ldsremis: <http://dime.usace.mil/data/dataset#REMIS_PROJECTS>
 
@@ -374,7 +356,7 @@ FROM lpgv:
 FROM lds:
 FROM ldsremis:
 WHERE {
-  ## Change this if you want to view a different program ##
+  ## Change this if you want to view a different program or comment out to see all programs ##
   ?f0 <http://www.w3.org/2004/02/skos/core#altLabel> "000510" .
   ##
 
@@ -432,10 +414,87 @@ WHERE {
   }
 }
 LIMIT 100`,
-      wktVar: "?wkt1",
+      wktVar: "COALESCE(?wkt5,?wkt4,?wkt3,?wkt2,?wkt1)",
       styles: defaultStyles,
       focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#Project-30000693"
-  }
+  },
+  {
+    title: "ALL Programs Flood Risk",
+    sparql: prefixes + `PREFIX lds: <http://dime.usace.mil/data/dataset#TERRAFRAME_CHANNEL_TO_PROJECT>
+PREFIX ldsremis: <http://dime.usace.mil/data/dataset#REMIS_PROJECTS>
+
+SELECT
+?gf0 ?ft0 ?f0 ?wkt0 ?lbl0 # Program
+?e0 ?ev0 # Project PartOf Program
+?gf1 ?ft1 ?f1 ?wkt1 ?lbl1 # Project
+?e1 ?ev1 # ConnectedTo
+?gf2 ?ft2 ?f2 ?wkt2 ?lbl2 # LeveeArea
+?e2 ?ev2 # HasFloodZone
+?gf3 ?ft3 ?f3 ?wkt3 ?lbl3 # LeveedArea
+?e3 ?ev3 # ConnectedTo
+?gf4 ?ft4 ?f4 ?wkt4 ?lbl4 # Object of interest
+FROM lpgv: 
+FROM lds:
+FROM ldsremis:
+WHERE {
+BIND(geo:Feature as ?gf1) .
+BIND(lpgvs:Project as ?ft1) .
+?f1 a ?ft1 .
+?f1 geo:hasGeometry ?g1 .
+?g1 geo:asWKT ?wkt1 .
+?f1 rdfs:label ?lbl1 .
+?f1 lpgs:GeoObject-code ?f1code .
+?f1 lpgvs:ConnectedTo ?f2 .
+
+?imp <http://www.w3.org/2004/02/skos/core#altLabel> ?f1code .
+?imp <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dime.usace.mil/ontologies/cwbi-concept#Remis_Project> .
+?imp <http://dime.usace.mil/ontologies/cwbi-concept#Program> ?f0 .
+
+BIND(<http://dime.usace.mil/ontologies/cwbi-concept#Program> as ?e0) .
+BIND(?f1 as ?ev0) .
+
+BIND(geo:Feature as ?gf0) .
+?f0 a <http://dime.usace.mil/ontologies/cwbi-concept#Program> .
+BIND(<http://dime.usace.mil/ontologies/cwbi-concept#Program> as ?ft0) .
+?f0 <http://www.w3.org/2004/02/skos/core#altLabel> ?lbl0 .
+
+BIND(lpgvs:ConnectedTo as ?e1) .
+BIND(?f2 as ?ev1) .
+
+BIND(geo:Feature as ?gf2) .
+?f2 a ?ft2 .
+?f2 geo:hasGeometry ?g2 .
+?g2 geo:asWKT ?wkt2 .
+?f2 rdfs:label ?lbl2 .
+OPTIONAL {
+  ?f2 lpgvs:HasFloodZone ?f3 .
+
+  BIND(lpgvs:HasFloodZone as ?e2) .
+  BIND(?f3 as ?ev2) .
+
+  BIND(geo:Feature as ?gf3) .
+  BIND(lpgvs:LeveedArea as ?ft3) .
+  ?f3 a ?ft3 .
+  ?f3 geo:hasGeometry ?g3 .
+  ?g3 geo:asWKT ?wkt3 .
+  ?f3 rdfs:label ?lbl3 .
+  ?f3 lpgvs:HasFloodRisk ?f4 .
+
+  BIND(lpgvs:HasFloodRisk as ?e3) .
+  BIND(?f4 as ?ev3) .
+
+  BIND(geo:Feature as ?gf4) .
+  ?f4 a ?ft4 .
+  ?f4 geo:hasGeometry ?g4 .
+  ?g4 geo:asWKT ?wkt4 .
+  ?f4 rdfs:label ?lbl4
+}
+}
+LIMIT 100`,
+    wktVar: "COALESCE(?wkt5,?wkt4,?wkt3,?wkt2,?wkt1)",
+    styles: defaultStyles,
+    focus: "https://dev-georegistry.geoprism.net/lpg/deliverable2024/0#Project-30000693"
+}
 ];
 
 export const locationCriteriaSparql = `

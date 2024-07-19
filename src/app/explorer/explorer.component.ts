@@ -176,7 +176,11 @@ export class ExplorerComponent implements AfterViewInit {
     if (this.queryConfig.focus != null && this.geoObjects.find(go => go.properties.uri === this.queryConfig.focus) != null) {
         this.zoomTo(this.queryConfig.focus);
     } else if (this.geoObjects.length > 0) {
-        this.zoomTo(this.geoObjects[0].properties.uri);
+        let go = this.geoObjects.find(go => go.geometry != null && go.properties.type != null);
+
+        if (go != null) {
+            this.zoomTo(go.properties.uri);
+        }
     }
 
     this.graphExplorer.renderGeoObjects(this, this.geoObjects);
