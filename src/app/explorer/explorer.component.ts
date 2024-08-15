@@ -7,7 +7,7 @@ import { parse, GeoJSONGeometryOrNull, GeoJSONGeometry } from 'wellknown';
 import { FormsModule } from '@angular/forms';
 import { GraphExplorerComponent } from '../graph-explorer/graph-explorer.component';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { defaultQueries, StyleConfig, QueryConfig, stateCentroid, locationCriteriaSparql } from './defaultQueries';
+import { defaultQueries, StyleConfig, QueryConfig, stateCentroid, locationCriteriaSparql, SELECTED_COLOR } from './defaultQueries';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import JSON5 from 'json5'
 
@@ -33,8 +33,6 @@ export interface GeoObject {
     geometry: GeoJSONGeometry,
     properties: { id: number; uri: string, type:string, label: string, edges: { [key: string]: [string] }, [key: string]: any }
 }
-
-export const SELECTED_COLOR = "#800000";
 
 @Component({
   selector: 'app-explorer',

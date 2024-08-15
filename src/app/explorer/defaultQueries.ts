@@ -65,22 +65,24 @@ PREFIX lpgvs: <https://dev-georegistry.geoprism.net/lpg/deliverable2024/0/rdfs#>
 PREFIX spatialF: <http://jena.apache.org/function/spatial#>
 `
 
+export const SELECTED_COLOR = "#ffff00";
+
 let defaultStyles = {
     'lpgvs:Hospital': {color:'#F2799D', order:0},
     'lpgvs:Dam':{color:'#D5F279', order:0},
     'lpgvs:Project':{color:'#C0F279', order:6, label:"Real Property Project"},
     'lpgvs:Watershed':{color:'#79F2C9', order:4},
-    'lpgvs:LeveeArea':{color:'#ffff99', order:4}, 
+    'lpgvs:LeveeArea':{color:'#d1d1d1', order:4}, 
     'lpgvs:RealProperty':{color:'#79F294', order:0},
-    'lpgvs:Reservoir':{color:'#94F279', order:5},
-    'lpgvs:ChannelArea':{color:'#F279B7',order:4},
+    'lpgvs:Reservoir':{color:'#caeefb', order:5},
+    'lpgvs:ChannelArea':{color:'#156082',order:4},
     'lpgvs:ChannelReach':{color:'#79DAF2',order:4},
     'lpgvs:RecreationArea':{color:'#F2E779',order:3},
     'lpgvs:School':{color:'#F2A579',order:0},
     'lpgvs:ChannelLine':{color:'#79F2A0',order:1},
     'lpgvs:LeveedArea':{color:'#C379F2',order:4},
     'lpgvs:River':{color:'#7999F2',order:2},
-    'lpgvs:SchoolZone':{color:'#BCF279',order:6},
+    'lpgvs:SchoolZone':{color:'#fbe3d6',order:6},
     'lpgvs:Levee':{color:'#F279E0',order:0},
     'lpgvs:WaterLock':{color:'#79F2E2',order:0},
     'lpgvs:UsaceRecreationArea':{color:'#F2BE79',order:3},
@@ -338,7 +340,7 @@ LIMIT 100`,
         styles: defaultStyles
     },
     {
-      title: "Specific Program Flood Risk (800510)",
+      title: "Specific Program Flood Risk (000510)",
       sparql: prefixes + `PREFIX lds: <http://dime.usace.mil/data/dataset#TERRAFRAME_CHANNEL_TO_PROJECT>
 PREFIX ldsremis: <http://dime.usace.mil/data/dataset#REMIS_PROJECTS>
 

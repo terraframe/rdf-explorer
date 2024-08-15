@@ -1,7 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
-import { ExplorerComponent, GeoObject, SELECTED_COLOR } from '../explorer/explorer.component';
+import { ExplorerComponent, GeoObject } from '../explorer/explorer.component';
 import { CommonModule } from '@angular/common';
 import { Edge, Node, GraphComponent, GraphModule } from '@swimlane/ngx-graph';
+import { SELECTED_COLOR } from '../explorer/defaultQueries';
 
 // export interface Relationship {
 //   oid: string,
